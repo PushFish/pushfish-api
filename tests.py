@@ -15,7 +15,7 @@ except ImportError:
     sys.exit('Please copy config.example.py to config.py and configure it')
 
 
-class PushjetTestCase(unittest.TestCase):
+class PushRocketTestCase(unittest.TestCase):
     def setUp(self):
         config.google_api_key = config.google_api_key or 'PLACEHOLDER'
 

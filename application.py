@@ -38,7 +38,7 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    return redirect('http://docs.pushjet.io')
+    return redirect('https://www.pushrocket.net')
 
 
 @app.route('/robots.txt')

@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from flask import Flask, jsonify, redirect, send_from_directory, request
 from sys import exit, stderr
 from os import getenv
+import database
 
 try:
     import config
@@ -32,8 +33,8 @@ app.debug = config.debug or int(getenv('FLASK_DEBUG', 0)) > 0
 app.config['SQLALCHEMY_DATABASE_URI'] = config.database_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
-with app.app_context():
-    db.engine.execute("SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'")
+db.app = app
+database.init_db()
 
 
 @app.route('/')

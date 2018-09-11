@@ -1,15 +1,15 @@
 from shared import db
 from datetime import datetime
-from sqlalchemy.dialects.mysql import INTEGER, TINYINT
+from sqlalchemy import Integer
 
 
 class Message(db.Model):
-    id = db.Column(INTEGER(unsigned=True), primary_key=True)
-    service_id = db.Column(INTEGER(unsigned=True), db.ForeignKey('service.id'), nullable=False)
+    id = db.Column(Integer, primary_key=True)
+    service_id = db.Column(Integer, db.ForeignKey('service.id'), nullable=False)
     service = db.relationship('Service', backref=db.backref('message', lazy='dynamic'))
     text = db.Column(db.TEXT, nullable=False)
     title = db.Column(db.VARCHAR)
-    level = db.Column(TINYINT, nullable=False, default=0)
+    level = db.Column(Integer, nullable=False, default=0)
     link = db.Column(db.TEXT, nullable=False, default='')
     timestamp_created = db.Column(db.TIMESTAMP, default=datetime.utcnow)
 

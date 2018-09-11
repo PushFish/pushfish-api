@@ -1,6 +1,6 @@
 from shared import db
 from datetime import datetime
-from sqlalchemy.dialects.mysql import INTEGER
+from sqlalchemy import Integer
 import hashlib
 from os import urandom
 from .subscription import Subscription
@@ -8,7 +8,7 @@ from .message import Message
 
 
 class Service(db.Model):
-    id = db.Column(INTEGER(unsigned=True), primary_key=True)
+    id = db.Column(Integer, primary_key=True)
     secret = db.Column(db.VARCHAR(32), nullable=False)
     public = db.Column(db.VARCHAR(40), nullable=False)
     name = db.Column(db.VARCHAR(255), nullable=False)

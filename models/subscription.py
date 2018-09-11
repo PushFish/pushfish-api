@@ -1,15 +1,15 @@
 from shared import db
-from sqlalchemy.dialects.mysql import INTEGER
+from sqlalchemy import Integer
 from datetime import datetime
 from .message import Message
 
 
 class Subscription(db.Model):
-    id = db.Column(INTEGER(unsigned=True), primary_key=True)
+    id = db.Column(Integer, primary_key=True)
     device = db.Column(db.VARCHAR(40), nullable=False)
-    service_id = db.Column(INTEGER(unsigned=True), db.ForeignKey('service.id'), nullable=False)
+    service_id = db.Column(Integer, db.ForeignKey('service.id'), nullable=False)
     service = db.relationship('Service', backref=db.backref('subscription', lazy='dynamic'))
-    last_read = db.Column(INTEGER(unsigned=True), db.ForeignKey('message.id'), default=0)
+    last_read = db.Column(Integer, db.ForeignKey('message.id'), default=0)
     timestamp_created = db.Column(db.TIMESTAMP, default=datetime.utcnow)
     timestamp_checked = db.Column(db.TIMESTAMP)
 

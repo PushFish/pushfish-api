@@ -1,5 +1,8 @@
-# Must be a mysql database!
-database_uri = 'sqlite:///pushjet_api.db'
+#example for an sqlite database
+database_uri = 'sqlite:///pushrocket_api.db'
+
+#example for a mysql database (not charset parameter)
+#database_uri = 'mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4'
 
 # Are we debugging the server?
 # Do not turn this on when in production!

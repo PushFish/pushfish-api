@@ -1,6 +1,6 @@
 from flask import current_app
 from shared import db
-from sqlalchemy.dialects.mysql import INTEGER
+from sqlalchemy import Integer
 from datetime import datetime
 from config import google_api_key
 from models import Subscription, Message
@@ -10,7 +10,7 @@ gcm_url = 'https://android.googleapis.com/gcm/send'
 
 
 class Gcm(db.Model):
-    id = db.Column(INTEGER(unsigned=True), primary_key=True)
+    id = db.Column(Integer, primary_key=True)
     uuid = db.Column(db.VARCHAR(40), nullable=False)
     gcmid = db.Column(db.TEXT, nullable=False)
     timestamp_created = db.Column(db.TIMESTAMP, default=datetime.utcnow)

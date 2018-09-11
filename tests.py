@@ -191,6 +191,11 @@ class PushRocketTestCase(unittest.TestCase):
         resp = self._failing_loader(rv.data)
         assert public not in [l['service']['public'] for l in resp['subscriptions']]
 
+        #check we on't receive the message anymore
+        rv = self.app.get('/message?uuid={}'.format(self.uuid))
+        resp = self._failing_loader(rv.data)
+        assert len(resp["messages"]) == 0
+
     def test_service_info(self):
         public, secret, name = self.test_service_create()
         rv = self.app.get('/service?service={}'.format(public))

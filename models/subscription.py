@@ -11,7 +11,7 @@ class Subscription(db.Model):
     service = db.relationship('Service', backref=db.backref('subscription', 
                                                             lazy='dynamic',
                                                             cascade="delete"))
-    last_read = db.Column(Integer, db.ForeignKey('message.id'), default=0)
+    last_read = db.Column(Integer, db.ForeignKey('message.id'), nullable = True)
     timestamp_created = db.Column(db.TIMESTAMP, default=datetime.utcnow)
     timestamp_checked = db.Column(db.TIMESTAMP)
 
@@ -21,7 +21,7 @@ class Subscription(db.Model):
         self.device = device
         self.service = service
         self.timestamp_checked = datetime.utcnow()
-        self.last_read = last_message.id if last_message else 0
+        self.last_read = last_message.id if last_message else None
 
     def __repr__(self):
         return '<Subscription {}>'.format(self.id)

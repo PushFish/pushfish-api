@@ -1,6 +1,6 @@
 from shared import db
 from datetime import datetime
-from sqlalchemy import Integer
+from sqlalchemy import Integer, Unicode
 
 
 class Message(db.Model):
@@ -11,7 +11,7 @@ class Message(db.Model):
                                                             lazy='dynamic', 
                                                             cascade="delete"))
     text = db.Column(db.TEXT, nullable=False)
-    title = db.Column(db.VARCHAR)
+    title = db.Column(Unicode(length=255))
     level = db.Column(Integer, nullable=False, default=0)
     link = db.Column(db.TEXT, nullable=False, default='')
     timestamp_created = db.Column(db.TIMESTAMP, default=datetime.utcnow)

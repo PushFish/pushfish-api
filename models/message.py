@@ -4,9 +4,12 @@ from sqlalchemy import Integer
 
 
 class Message(db.Model):
-    id = db.Column(Integer, primary_key=True)
-    service_id = db.Column(Integer, db.ForeignKey('service.id'), nullable=False)
-    service = db.relationship('Service', backref=db.backref('message', lazy='dynamic'))
+    id = db.Column(INTEGER(unsigned=True), primary_key=True)
+    service_id = db.Column(INTEGER(unsigned=True), db.ForeignKey('service.id'),
+                           nullable=False)
+    service = db.relationship('Service', backref=db.backref('message', 
+                                                            lazy='dynamic', 
+                                                            cascade="delete"))
     text = db.Column(db.TEXT, nullable=False)
     title = db.Column(db.VARCHAR)
     level = db.Column(Integer, nullable=False, default=0)

@@ -5,7 +5,7 @@ from .message import Message
 
 
 class Subscription(db.Model):
-    id = db.Column(INTEGER(unsigned=True), primary_key=True)
+    id = db.Column(Integer, primary_key=True)
     device = db.Column(db.VARCHAR(40), nullable=False)
     service_id = db.Column(Integer, db.ForeignKey('service.id'), nullable=False)  
     service = db.relationship('Service', backref=db.backref('subscription', 

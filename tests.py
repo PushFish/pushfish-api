@@ -7,16 +7,30 @@ import unittest
 import string
 import random
 import json
-import sys
+import tempfile
+import logging
 
 from config import Config
 
-cfg = Config(create=True)
+_LOGGER = logging.getLogger("pushrocket-api-TESTS")
 
-class PushRocketTestCase(unittest.TestCase):
-    def setUp(self):
+#NOTE: don't inherit these from unittest.TestCase, inherit the specialized
+#database classes that way, then they both get run
+class PushRocketTestCase:
+    @classmethod
+    def setUpClass(cls):
+        _LOGGER.info("running test cases with database URI: {}".format(cls.URI))
         #cfg.google_api_key = cfg.google_api_key or 'PLACEHOLDER'
+        _tempfd, cls._tempfilepath = tempfile.mkstemp(text=True)
+        cls.config = Config(path=cls._tempfilepath, overwrite=True)
+        cls.config._cfg["database"]["uri"] = cls.URI
 
+    @classmethod
+    def tearDownClass(cls):
+        os.unlink(cls._tempfilepath)
+
+
+    def setUp(self):
         self.uuid = str(uuid4())
         from application import app
 
@@ -78,7 +92,7 @@ class PushRocketTestCase(unittest.TestCase):
         rv = self.app.delete('/subscription?uuid={}&service={}'.format(self.uuid, public))
         self._failing_loader(rv.data)
         return public, secret
-    
+
     def test_subscription_invalid_delete(self):
         # Without a just-deleted service there's a chance to get an existing
         # one, as a test database isn't created when running tests.
@@ -122,7 +136,6 @@ class PushRocketTestCase(unittest.TestCase):
 
         rv = self.app.get('/message?uuid={}'.format(self.uuid))
         resp = self._failing_loader(rv.data)
-        z = len(resp['messages'])
         assert len(resp['messages']) is amount
 
         # Ensure it is marked as read
@@ -288,5 +301,19 @@ class PushRocketTestCase(unittest.TestCase):
                 assert data == i.read()
 
 
-if __name__ == '__main__':
+class PushRocketSqliteTests(PushRocketTestCase, unittest.TestCase):
+    URI = "sqlite:///pushrocket_api.db"
+
+class PushRocketMysqlTests(PushRocketTestCase, unittest.TestCase):
+    URI = "mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4"
+
+
+def load_tests(loader,standard_tests,pattern):
+    suite = unittest.TestSuite()
+    for test_class in [PushRocketSqliteTests, PushRocketMysqlTests]:
+        tests = loader.loadTestsFromTestCase(test_class)
+        suite.addTests(tests)
+    return suite
+
+if __name__ == "__main__":
     unittest.main()

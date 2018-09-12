@@ -3,13 +3,15 @@
 import configparser
 import os
 import logging
-
+from typing import Type, TypeVar
 import appdirs
 
 _LOGGER = logging.getLogger("pushrocket-api")
 APPNAME = "pushrocket-api"
 
-def get_config_file_path():
+T = TypeVar("T", bound="TrivialClass")
+
+def get_config_file_path() -> str:
     """
     gets a configuration file path for pushrocket-api.
 
@@ -64,8 +66,8 @@ def write_default_config(path: str = None, overwrite: bool = False):
 
     cfg = configparser.ConfigParser(allow_no_value=True)
     cfg.add_section("database")
-    cfg.set("database", "#for mysql, use something like: \
-            uri = 'mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4'")
+    cfg.set("database", """#for mysql, use something like:
+ #uri = 'mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4'""")
     dbpath = os.path.join(appdirs.user_data_dir(APPNAME), "pushrocket-api.db")
     if not os.path.exists(appdirs.user_data_dir(APPNAME)):
         _LOGGER.info("creating directory for local sqlite database store")
@@ -74,11 +76,14 @@ def write_default_config(path: str = None, overwrite: bool = False):
     cfg["database"]["uri"] = "sqlite:///" + dbpath
 
     cfg.add_section("dispatch")
+    cfg.set("dispatch", """#point zeromq_relay_uri at the zeromq pubsub socket for 
+ #the pushrocket connectors """)
     cfg["dispatch"]["google_api_key"] = ""
     cfg["dispatch"]["google_gcm_sender_id"] = str(509878466986)
     cfg["dispatch"]["zeromq_relay_uri"] = ""
 
     cfg.add_section("server")
+    cfg.set("server", """#set debug to 0 for production mode """)
     cfg["server"]["debug"] = str(int(True))
 
     cfgdir = os.path.dirname(path)
@@ -96,7 +101,7 @@ class Config:
     """ reader for pushrocket config file """
     
     @classmethod
-    def get_global_instance(cls):
+    def get_global_instance(cls : Type[T]) -> T:
         """ returns the a global instance of the Config object.
         If one has not yet been defined, raises a RuntimeError"""
         if cls.GLOBAL_INSTANCE is None:
@@ -105,7 +110,7 @@ class Config:
         
         return cls.GLOBAL_INSTANCE
     
-    def __init__(self, path=None, create=False):
+    def __init__(self, path:str = None, create:bool = False):
         """
         arguments:
             path: path for config file. If not specified, calls get_default_config_path()
@@ -130,27 +135,27 @@ class Config:
         Config.GLOBAL_INSTANCE = self
 
     @property
-    def database_uri(self):
+    def database_uri(self) -> str:
         """ returns the database connection URI"""
         return self._cfg["database"]["uri"]
 
     @property
-    def google_api_key(self):
+    def google_api_key(self) -> str:
         """ returns google API key for gcm"""
         return self._cfg["dispatch"]["google_api_key"]
 
     @property
-    def google_gcm_sender_id(self):
+    def google_gcm_sender_id(self) -> int:
         """ returns sender id for gcm"""
         return int(self._cfg["dispatch"]["google_gcm_sender_id"])
 
     @property
-    def zeromq_relay_uri(self):
+    def zeromq_relay_uri(self) -> str:
         """ returns relay URI for zeromq dispatcher"""
         return self._cfg["dispatch"]["zeromq_relay_URI"]
 
     @property
-    def debug(self):
+    def debug(self) -> bool:
         """ returns desired debug state of application.
         Overridden by the value of environment variable FLASK_DEBUG """
         if int(os.getenv("FLASK_DEBUG", 0)):

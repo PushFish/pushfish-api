@@ -22,7 +22,7 @@ def subscription_post(client, service):
     db.session.add(subscription_new)
     db.session.commit()
 
-    if zeromq_relay_uri:
+    if cfg.zeromq_relay_uri:
         queue_zmq_message(json_encode({'subscription': subscription_new.as_dict()}))
 
     return jsonify({'service': service.as_dict()})

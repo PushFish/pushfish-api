@@ -57,7 +57,7 @@ def service_delete(service):
     # In case we need to send this at a later point
     # when the subscriptions have been deleted.
     send_later = []
-    if zeromq_relay_uri:
+    if cfg.zeromq_relay_uri:
         for l in subscriptions:
             send_later.append(json_encode({'subscription': l.as_dict()}))
 
@@ -68,7 +68,7 @@ def service_delete(service):
     db.session.commit()
 
     # Notify that the subscriptions have been deleted
-    if zeromq_relay_uri:
+    if cfg.zeromq_relay_uri:
         map(queue_zmq_message, send_later)
 
     return Error.NONE

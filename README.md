@@ -8,8 +8,8 @@ The pushrocket API server reads various options from a configuration file. This 
 
 ```
      ~/.config/pushrocket-api/pushrocket-api.cfg # on Linux 
-    on Windows: C:\\Users\\user\\AppData\\Local\\pushrocket-api\\pushrocket-api.cfg # on Windows
-    on OSX: /Users/user/Library/Application Support/pushrocket-api/pushrocket-api.cfg # on OSX
+     %APPDATA%\pushrocket-api\pushrocket-api.cfg # on Windows
+     ~/Library/Application Support/pushrocket-api/pushrocket-api.cfg # on OSX
 ```
 
 where the value for "user" will be changed to your current username. If this file does not exist, then the API server will generate a default configuration, which looks like this:

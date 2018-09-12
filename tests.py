@@ -9,15 +9,13 @@ import random
 import json
 import sys
 
-try:
-    import config
-except ImportError:
-    sys.exit('Please copy config.example.py to config.py and configure it')
+from config import Config
 
+cfg = Config(create=True)
 
 class PushRocketTestCase(unittest.TestCase):
     def setUp(self):
-        config.google_api_key = config.google_api_key or 'PLACEHOLDER'
+        #cfg.google_api_key = cfg.google_api_key or 'PLACEHOLDER'
 
         self.uuid = str(uuid4())
         from application import app

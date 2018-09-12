@@ -1,8 +1,10 @@
+from json import dumps as json_encode
+
 from flask import Blueprint, jsonify, request
 from utils import Error, is_service, is_secret, has_secret, queue_zmq_message
+
 from models import Service, Message
 from shared import db
-from json import dumps as json_encode
 from config import Config
 
 cfg = Config.get_global_instance()
@@ -82,12 +84,12 @@ def service_patch(service):
 
     for field in fields:
         data = request.form.get(field, '').strip()
-        if data is not '':
+        if data != '':
             setattr(service, field, data)
             updated = True
 
     if updated:
         db.session.commit()
         return Error.NONE
-    else:
-        return Error.NO_CHANGES
+
+    return Error.NO_CHANGES

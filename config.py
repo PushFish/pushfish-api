@@ -1,14 +1,15 @@
 """ setting and getting the persistent configuration for pushrocket-api server"""
-
+import sys
 import configparser
 import os
 import logging
 from typing import Type, TypeVar
-import appdirs
-import sys
 from collections import namedtuple
+import warnings
 
-defaultopt = namedtuple("opt",["default","type","required"])
+import appdirs
+
+DefaultOpt = namedtuple("opt", ["default", "type", "required"])
 
 APPNAME = "pushrocket-api"
 _LOGGER = logging.getLogger(APPNAME)
@@ -26,22 +27,21 @@ def construct_default_db_uri() -> str:
 
 
 
-DEFAULT_VALUES = {"database" : {"uri" : defaultopt(construct_default_db_uri,str,True)},
-                  "dispatch" : { "google_api_key" : defaultopt("",str,False),
-                                "google_gcm_sender_id" : defaultopt(509878466986,bool,True),
-                                "zeromq_relay_uri" : defaultopt("",str,False) },
-                  "server" : {"debug" : defaultopt(0,bool,False)}
-                  }
+DEFAULT_VALUES = {"database" : {"uri" : DefaultOpt(construct_default_db_uri, str, True)},
+                  "dispatch" : {"google_api_key" : DefaultOpt("", str, False),
+                                 "google_gcm_sender_id" : DefaultOpt(509878466986, bool, True),
+                                 "zeromq_relay_uri" : DefaultOpt("", str, False)},
+                  "server" : {"debug" : DefaultOpt(0, bool, False)}}
 
 COMMENTS = {"database" : """#for mysql, use something like:
- #uri = 'mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4'""",
- "dispatch" : """#point zeromq_relay_uri at the zeromq pubsub socket for
- #the pushrocket connectors """,
- "server" :  """#set debug to 0 for production mode """}
+#uri = 'mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4'""",
+            "dispatch" : """#point zeromq_relay_uri at the zeromq pubsub socket for
+#the pushrocket connectors """,
+            "server" :  """#set debug to 0 for production mode """}
 
 
-def call_if_callable(v,*args,**kwargs):
-    return v(*args,**kwargs) if callable(v) else v
+def call_if_callable(v, *args, **kwargs):
+    return v(*args, **kwargs) if callable(v) else v
 
 
 def get_config_file_path() -> str:
@@ -101,7 +101,7 @@ def write_default_config(path: str = None, overwrite: bool = False):
 
     for section, settings in DEFAULT_VALUES.items():
         cfg.add_section(section)
-        cfg.set(section,COMMENTS[section])
+        cfg.set(section, COMMENTS[section])
         for setting, value in settings.items():
             v = call_if_callable(value.default)
             cfg[section][setting] = str(v)
@@ -131,6 +131,7 @@ class Config:
 
         return cls.GLOBAL_INSTANCE
 
+
     def __init__(self, path: str = None, create: bool = False,
                  overwrite: bool = False) -> None:
         """
@@ -159,34 +160,41 @@ class Config:
         with open(path, "r") as f:
             self._cfg.read_file(f)
 
-        Config.GLOBAL_INSTANCE = self
+        #HACK: this is purely here so that the tests can override the global app
+        #config
+        if hasattr(self, "INJECT_CONFIG"):
+            warnings.warn("running with injected config. If you see this \
+                          whilst not running tests it IS AN ERROR")
+            self = Config.GLOBAL_INSTANCE
+        else:
+            Config.GLOBAL_INSTANCE = self
 
         if self.debug:
-            self.GLOBAL_BACKTRACE_ENABLE = True
+            Config.GLOBAL_BACKTRACE_ENABLE = True
 
         self._check_spurious_keys()
 
     def _check_spurious_keys(self):
         for section in self._cfg.sections():
             if section not in DEFAULT_VALUES:
-                _LOGGER.critical("spurious section [%s] found in config file. " % section)
+                _LOGGER.critical("spurious section [%s] found in config file. ", section)
                 _LOGGER.critical("don't know how to handle this, exiting...")
                 sys.exit(1)
-            
+
             for key in self._cfg[section].keys():
                 if key not in DEFAULT_VALUES[section]:
-                    _LOGGER.critical("spurious key %s in section [%s] found in config file. " % (key,section))
+                    _LOGGER.critical("spurious key %s in section [%s] found in config file. ", key, section)
                     _LOGGER.critical("don't know how to handle this, exiting...")
                     sys.exit(1)
 
 
-    def _safe_get_cfg_value(self,section:str, key: str):
+    def _safe_get_cfg_value(self, section: str, key: str):
         opt = DEFAULT_VALUES[section][key]
         try:
             return opt.type(self._cfg[section][key])
         except KeyError as err:
             reportstr = "no value for configuration option: %s in section [%s] defined" % (key, section)
-            
+
             if opt.required:
                 _LOGGER.critical(reportstr)
                 _LOGGER.critical("a value for this option is REQUIRED")
@@ -205,12 +213,12 @@ class Config:
     @property
     def database_uri(self) -> str:
         """ returns the database connection URI"""
-        return self._safe_get_cfg_value("database","uri")
+        return self._safe_get_cfg_value("database", "uri")
 
     @property
     def google_api_key(self) -> str:
         """ returns google API key for gcm"""
-        return self._safe_get_cfg_value("dispatch","google_api_key")
+        return self._safe_get_cfg_value("dispatch", "google_api_key")
 
     @property
     def google_gcm_sender_id(self) -> int:
@@ -220,7 +228,7 @@ class Config:
     @property
     def zeromq_relay_uri(self) -> str:
         """ returns relay URI for zeromq dispatcher"""
-        return self._safe_get_cfg_value("dispatch","zeromq_relay_uri")
+        return self._safe_get_cfg_value("dispatch", "zeromq_relay_uri")
 
 
     #NOTE can't use self._safe_get_cfg_value for debug. It is special,
@@ -231,4 +239,4 @@ class Config:
         Overridden by the value of environment variable FLASK_DEBUG """
         if int(os.getenv("FLASK_DEBUG", "0")):
             return True
-        return self._safe_get_cfg_value("server","debug")
+        return self._safe_get_cfg_value("server", "debug")

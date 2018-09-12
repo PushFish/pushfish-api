@@ -3,16 +3,25 @@
 from __future__ import unicode_literals
 from flask import Flask, redirect, send_from_directory, request
 from sys import stderr
+import logging
 
 from config import Config
-cfg = Config(create=True)
+_LOGGER = logging.getLogger(name="pushrocket_API")
+
+
+if __name__ == "__main__":
+    _LOGGER.info("running application as main, creating Config object")
+    cfg = Config(create=True)
+else:
+    _LOGGER.info("running application not as main (probably test mode), using existing global config")
+    cfg = Config.get_global_instance()
 
 import database
 
 
 
 from shared import db
-from controllers import *
+from controllers import subscription, message, service, gcm
 from utils import Error
 
 gcm_enabled = True

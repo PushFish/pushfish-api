@@ -1,12 +1,14 @@
+from datetime import datetime
+from json import dumps as json_encode
+
 from flask import Blueprint, jsonify, request
 from flask import current_app
 
 from utils import Error, has_uuid, has_secret, queue_zmq_message
 from shared import db
 from models import Subscription, Message, Gcm
-from datetime import datetime
 from config import Config
-from json import dumps as json_encode
+
 
 cfg = Config.get_global_instance()
 
@@ -49,7 +51,7 @@ def message_send(service):
 @has_uuid
 def message_recv(client):
     subscriptions = Subscription.query.filter_by(device=client).all()
-    if len(subscriptions) == 0:
+    if not subscriptions:
         return jsonify({'messages': []})
 
     msg = []
@@ -71,7 +73,7 @@ def message_recv(client):
 @has_uuid
 def message_read(client):
     subscriptions = Subscription.query.filter_by(device=client).all()
-    if len(subscriptions) > 0:
+    if subscriptions:
         last_message = Message.query.order_by(Message.id.desc()).first()
         for l in subscriptions:
             l.timestamp_checked = datetime.utcnow()

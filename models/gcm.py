@@ -60,7 +60,7 @@ class Gcm(db.Model):
     @staticmethod
     def gcm_send(ids, data):
         url = 'https://android.googleapis.com/gcm/send'
-        headers = dict(Authorization='key={}'.format(google_api_key))
+        headers = dict(Authorization='key={}'.format(cfg.google_api_key))
         data = dict(registration_ids=ids, data=data)
 
         if current_app.config['TESTING'] is True:

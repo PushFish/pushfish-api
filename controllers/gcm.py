@@ -37,6 +37,6 @@ def gcm_unregister(client):
 
 @gcm.route("/gcm", methods=["GET"])
 def gcm_sender_id():
-    data = dict(sender_id=google_gcm_sender_id)
+    data = dict(sender_id=cfg.google_gcm_sender_id)
     return jsonify(data)
 

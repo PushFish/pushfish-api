@@ -28,7 +28,7 @@ def construct_default_db_uri() -> str:
 
 DEFAULT_VALUES = {"database" : {"uri" : defaultopt(construct_default_db_uri,str,True)},
                   "dispatch" : { "google_api_key" : defaultopt("",str,False),
-                                "google_gcm_sender_id" : defaultopt(0,bool,False),
+                                "google_gcm_sender_id" : defaultopt(509878466986,bool,True),
                                 "zeromq_relay_uri" : defaultopt("",str,False) },
                   "server" : {"debug" : defaultopt(0,bool,False)}
                   }
@@ -101,7 +101,7 @@ def write_default_config(path: str = None, overwrite: bool = False):
 
     for section, settings in DEFAULT_VALUES.items():
         cfg.add_section(section)
-        cfg.set("section",COMMENTS[section])
+        cfg.set(section,COMMENTS[section])
         for setting, value in settings.items():
             v = call_if_callable(value.default)
             cfg[section][setting] = str(v)

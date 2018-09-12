@@ -34,10 +34,10 @@ def message_send(service):
     db.session.add(msg)
     db.session.commit()
 
-    if google_api_key or current_app.config['TESTING']:
+    if cfg.google_api_key or current_app.config['TESTING']:
         Gcm.send_message(msg)
 
-    if zeromq_relay_uri:
+    if cfg.zeromq_relay_uri:
         queue_zmq_message(json_encode({"message": msg.as_dict()}))
 
     service.cleanup()

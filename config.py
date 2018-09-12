@@ -113,11 +113,14 @@ class Config:
 
         return cls.GLOBAL_INSTANCE
 
-    def __init__(self, path: str = None, create: bool = False) -> None:
+    def __init__(self, path: str = None, create: bool = False,
+                 overwrite: bool = False) -> None:
         """
         arguments:
             path: path for config file. If not specified, calls get_default_config_path()
             create: create a default config file if it doesn't exist
+            overwrite: overwrite the config file with the default even if it
+            does already exist
         """
         if not path:
             path = get_config_file_path()
@@ -130,6 +133,9 @@ class Config:
 
             _LOGGER.info("config file doesn't exist, creating it...")
             write_default_config(path=path, overwrite=False)
+        elif overwrite:
+            _LOGGER.warning("config file already exists, overwriting...")
+            write_default_config(path=path, overwrite=True)
 
         self._cfg = configparser.ConfigParser()
         with open(path, "r") as f:

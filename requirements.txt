@@ -3,3 +3,4 @@ flask
 flask-sqlalchemy
 pyzmq
 requests
+appdirs

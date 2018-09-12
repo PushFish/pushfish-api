@@ -1,36 +1,35 @@
 #!/usr/bin/env python2.7
 # coding=utf-8
 from __future__ import unicode_literals
-from flask import Flask, jsonify, redirect, send_from_directory, request
-from sys import exit, stderr
-from os import getenv
+from flask import Flask, redirect, send_from_directory, request
+from sys import stderr
+
+from config import Config
+cfg = Config(create=True)
+
 import database
 
-try:
-    import config
-except ImportError:
-    stderr.write("FATAL: Please copy config.example.py to config.py and edit the file.")
-    exit(1)
+
 
 from shared import db
 from controllers import *
 from utils import Error
 
 gcm_enabled = True
-if config.google_api_key == '':
+if cfg.google_api_key == '':
     stderr.write("WARNING: GCM disabled, please enter the google api key for gcm")
     gcm_enabled = False
-if not isinstance(config.google_gcm_sender_id, int):
+if not isinstance(cfg.google_gcm_sender_id, int):
     stderr.write("WARNING: GCM disabled, sender id is not an integer")
     gcm_enabled = False
-elif config.google_gcm_sender_id == 0:
+elif cfg.google_gcm_sender_id == 0:
     stderr.write('WARNING: GCM disabled, invalid sender id found')
     gcm_enabled = False
 
 
 app = Flask(__name__)
-app.debug = config.debug or int(getenv('FLASK_DEBUG', 0)) > 0
-app.config['SQLALCHEMY_DATABASE_URI'] = config.database_uri
+app.debug = cfg.debug
+app.config['SQLALCHEMY_DATABASE_URI'] = cfg.database_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 db.app = app

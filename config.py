@@ -6,7 +6,7 @@ import logging
 
 import appdirs
 
-__LOGGER = logging.getLogger("pushrocket-api")
+_LOGGER = logging.getLogger("pushrocket-api")
 APPNAME = "pushrocket-api"
 
 def get_config_file_path():
@@ -30,9 +30,9 @@ def get_config_file_path():
     #check environment variable first
     cfile = os.getenv("PUSHROCKET_CONFIG")
     if not cfile:
-        __LOGGER.info("PUSHROCKET_CONFIG is not set, using default config file location")
+        _LOGGER.info("PUSHROCKET_CONFIG is not set, using default config file location")
     elif not os.path.exists(cfile):
-        __LOGGER.error("PUSHROCKET_CONFIG file path is invalid: %s", cfile)
+        _LOGGER.error("PUSHROCKET_CONFIG file path is invalid: %s", cfile)
     else:
         return cfile
 
@@ -57,17 +57,21 @@ def write_default_config(path: str = None, overwrite: bool = False):
     if os.path.exists(path):
         if not overwrite:
             errstr = "config file {} already exists. Not overwriting".format(path)
-            __LOGGER.error(errstr)
+            _LOGGER.error(errstr)
             raise RuntimeError(errstr)
         else:
-            __LOGGER.warning("overwriting existing config file %s with default", path)
+            _LOGGER.warning("overwriting existing config file %s with default", path)
 
     cfg = configparser.ConfigParser(allow_no_value=True)
     cfg.add_section("database")
     cfg.set("database", "#for mysql, use something like: \
             uri = 'mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4'")
     dbpath = os.path.join(appdirs.user_data_dir(APPNAME), "pushrocket-api.db")
-    cfg["database"]["uri"] = dbpath
+    if not os.path.exists(appdirs.user_data_dir(APPNAME)):
+        _LOGGER.info("creating directory for local sqlite database store")
+        os.mkdir(appdirs.user_data_dir(APPNAME))
+    
+    cfg["database"]["uri"] = "sqlite:///" + dbpath
 
     cfg.add_section("dispatch")
     cfg["dispatch"]["google_api_key"] = ""
@@ -79,7 +83,7 @@ def write_default_config(path: str = None, overwrite: bool = False):
 
     cfgdir = os.path.dirname(path)
     if not os.path.exists(cfgdir):
-        os.mkdir(cfgdir)    
+        os.mkdir(cfgdir)
         with open(path, "x") as f:
             cfg.write(f)
     else:
@@ -88,7 +92,17 @@ def write_default_config(path: str = None, overwrite: bool = False):
 
 
 class Config:
+    GLOBAL_INSTANCE = None
     """ reader for pushrocket config file """
+    
+    @classmethod
+    def get_global_instance(cls):
+        if cls.GLOBAL_INSTANCE is None:
+            raise RuntimeError("no global config instance exists. Construct a \
+                               Config instance somewhere in the application")
+        
+        return cls.GLOBAL_INSTANCE
+    
     def __init__(self, path=None, create=False):
         """
         arguments:
@@ -101,15 +115,17 @@ class Config:
         if not os.path.exists(path):
             if not create:
                 errstr = "config file doesn't exist, and didn't pass create=True"
-                __LOGGER.error(errstr)
+                _LOGGER.error(errstr)
                 raise RuntimeError(errstr)
 
-            __LOGGER.info("config file doesn't exist, creating it...")
+            _LOGGER.info("config file doesn't exist, creating it...")
             write_default_config(path=path, overwrite=False)
 
         self._cfg = configparser.ConfigParser()
         with open(path, "r") as f:
             self._cfg.read_file(f)
+
+        Config.GLOBAL_INSTANCE = self
 
     @property
     def database_uri(self):
@@ -127,15 +143,17 @@ class Config:
         return int(self._cfg["dispatch"]["google_gcm_sender_id"])
 
     @property
-    def zeromq_relay_id(self):
-        """ returns relay id for zeromq dispatcher"""
-        return self._cfg["dispatch"]["zeromq_relay_id"]
+    def zeromq_relay_uri(self):
+        """ returns relay URI for zeromq dispatcher"""
+        return self._cfg["dispatch"]["zeromq_relay_URI"]
 
     @property
     def debug(self):
         """ returns desired debug state of application.
         Overridden by the value of environment variable FLASK_DEBUG """
-        if int(os.getenv("FLASK_DEBUG",0)):
+        if int(os.getenv("FLASK_DEBUG", 0)):
             return True
 
         return bool(int(self._cfg["server"]["debug"]))
+
+    

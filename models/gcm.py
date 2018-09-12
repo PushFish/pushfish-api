@@ -2,9 +2,11 @@ from flask import current_app
 from shared import db
 from sqlalchemy import Integer
 from datetime import datetime
-from config import google_api_key
+from config import Config
 from models import Subscription, Message
 import requests
+
+cfg = Config.get_global_instance()
 
 gcm_url = 'https://android.googleapis.com/gcm/send'
 

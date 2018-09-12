@@ -3,7 +3,9 @@ from utils import Error, is_service, is_secret, has_secret, queue_zmq_message
 from models import Service, Message
 from shared import db
 from json import dumps as json_encode
-from config import zeromq_relay_uri
+from config import Config
+
+cfg = Config.get_global_instance()
 
 service = Blueprint('service', __name__)
 

@@ -5,8 +5,10 @@ from utils import Error, has_uuid, has_secret, queue_zmq_message
 from shared import db
 from models import Subscription, Message, Gcm
 from datetime import datetime
-from config import zeromq_relay_uri, google_api_key
+from config import Config
 from json import dumps as json_encode
+
+cfg = Config.get_global_instance()
 
 message = Blueprint('message', __name__)
 

@@ -2,7 +2,9 @@ from flask import Blueprint, request, jsonify
 from utils import has_uuid, Error
 from models import Gcm
 from shared import db
-from config import google_gcm_sender_id
+from config import Config
+
+cfg = Config.get_global_instance()
 
 gcm = Blueprint('gcm', __name__)
 

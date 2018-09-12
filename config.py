@@ -133,5 +133,9 @@ class Config:
 
     @property
     def debug(self):
-        """ returns desired debug state of application"""
+        """ returns desired debug state of application.
+        Overridden by the value of environment variable FLASK_DEBUG """
+        if int(os.getenv("FLASK_DEBUG",0)):
+            return True
+
         return bool(int(self._cfg["server"]["debug"]))

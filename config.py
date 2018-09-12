@@ -5,11 +5,44 @@ import os
 import logging
 from typing import Type, TypeVar
 import appdirs
+import sys
+from collections import namedtuple
 
-_LOGGER = logging.getLogger("pushrocket-api")
+defaultopt = namedtuple("opt",["default","type","required"])
+
 APPNAME = "pushrocket-api"
+_LOGGER = logging.getLogger(APPNAME)
+
 
 T = TypeVar("T", bound="Config")
+
+
+def construct_default_db_uri() -> str:
+    dbpath = os.path.join(appdirs.user_data_dir(APPNAME), "pushrocket-api.db")
+    if not os.path.exists(appdirs.user_data_dir(APPNAME)):
+        _LOGGER.info("creating directory for local sqlite database store")
+        os.mkdir(appdirs.user_data_dir(APPNAME))
+    return "sqlite:///" + dbpath
+
+
+
+DEFAULT_VALUES = {"database" : {"uri" : defaultopt(construct_default_db_uri,str,True)},
+                  "dispatch" : { "google_api_key" : defaultopt("",str,False),
+                                "google_gcm_sender_id" : defaultopt(0,bool,False),
+                                "zeromq_relay_uri" : defaultopt("",str,False) },
+                  "server" : {"debug" : defaultopt(0,bool,False)}
+                  }
+
+COMMENTS = {"database" : """#for mysql, use something like:
+ #uri = 'mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4'""",
+ "dispatch" : """#point zeromq_relay_uri at the zeromq pubsub socket for
+ #the pushrocket connectors """,
+ "server" :  """#set debug to 0 for production mode """}
+
+
+def call_if_callable(v,*args,**kwargs):
+    return v(*args,**kwargs) if callable(v) else v
+
 
 def get_config_file_path() -> str:
     """
@@ -65,29 +98,13 @@ def write_default_config(path: str = None, overwrite: bool = False):
             _LOGGER.warning("overwriting existing config file %s with default", path)
 
     cfg = configparser.ConfigParser(allow_no_value=True)
-    cfg.add_section("database")
-    db_uridockstr = """#for mysql, use something like:
- #uri = 'mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4'"""
 
-    cfg.set("database", db_uridockstr) #type:ignore
-    dbpath = os.path.join(appdirs.user_data_dir(APPNAME), "pushrocket-api.db")
-    if not os.path.exists(appdirs.user_data_dir(APPNAME)):
-        _LOGGER.info("creating directory for local sqlite database store")
-        os.mkdir(appdirs.user_data_dir(APPNAME))
-
-    cfg["database"]["uri"] = "sqlite:///" + dbpath
-
-    cfg.add_section("dispatch")
-    zmq_dockstr = """#point zeromq_relay_uri at the zeromq pubsub socket for
- #the pushrocket connectors """
-    cfg.set("dispatch", zmq_dockstr) #type:ignore
-    cfg["dispatch"]["google_api_key"] = ""
-    cfg["dispatch"]["google_gcm_sender_id"] = str(509878466986)
-    cfg["dispatch"]["zeromq_relay_uri"] = ""
-
-    cfg.add_section("server")
-    cfg.set("server", """#set debug to 0 for production mode """) #type:ignore
-    cfg["server"]["debug"] = str(int(True))
+    for section, settings in DEFAULT_VALUES.items():
+        cfg.add_section(section)
+        cfg.set("section",COMMENTS[section])
+        for setting, value in settings.items():
+            v = call_if_callable(value.default)
+            cfg[section][setting] = str(v)
 
     cfgdir = os.path.dirname(path)
     if not os.path.exists(cfgdir):
@@ -102,6 +119,7 @@ def write_default_config(path: str = None, overwrite: bool = False):
 class Config:
     """ reader for pushrocket config file """
     GLOBAL_INSTANCE = None
+    GLOBAL_BACKTRACE_ENABLE = False
 
     @classmethod
     def get_global_instance(cls: Type[T]) -> T:
@@ -143,31 +161,74 @@ class Config:
 
         Config.GLOBAL_INSTANCE = self
 
+        if self.debug:
+            self.GLOBAL_BACKTRACE_ENABLE = True
+
+        self._check_spurious_keys()
+
+    def _check_spurious_keys(self):
+        for section in self._cfg.sections():
+            if section not in DEFAULT_VALUES:
+                _LOGGER.critical("spurious section [%s] found in config file. " % section)
+                _LOGGER.critical("don't know how to handle this, exiting...")
+                sys.exit(1)
+            
+            for key in self._cfg[section].keys():
+                if key not in DEFAULT_VALUES[section]:
+                    _LOGGER.critical("spurious key %s in section [%s] found in config file. " % (key,section))
+                    _LOGGER.critical("don't know how to handle this, exiting...")
+                    sys.exit(1)
+
+
+    def _safe_get_cfg_value(self,section:str, key: str):
+        opt = DEFAULT_VALUES[section][key]
+        try:
+            return opt.type(self._cfg[section][key])
+        except KeyError as err:
+            reportstr = "no value for configuration option: %s in section [%s] defined" % (key, section)
+            
+            if opt.required:
+                _LOGGER.critical(reportstr)
+                _LOGGER.critical("a value for this option is REQUIRED")
+                _LOGGER.critical("pushrocket-api cannot continue, exiting..")
+
+                if Config.GLOBAL_BACKTRACE_ENABLE:
+                    raise err
+                else:
+                    sys.exit(1)
+            else:
+                _LOGGER.warning(reportstr)
+                defvalue = call_if_callable(opt.default)
+                _LOGGER.warning("using default value of %s" % str(defvalue))
+                return opt.type(defvalue)
+
     @property
     def database_uri(self) -> str:
         """ returns the database connection URI"""
-        return self._cfg["database"]["uri"]
+        return self._safe_get_cfg_value("database","uri")
 
     @property
     def google_api_key(self) -> str:
         """ returns google API key for gcm"""
-        return self._cfg["dispatch"]["google_api_key"]
+        return self._safe_get_cfg_value("dispatch","google_api_key")
 
     @property
     def google_gcm_sender_id(self) -> int:
         """ returns sender id for gcm"""
-        return int(self._cfg["dispatch"]["google_gcm_sender_id"])
+        return self._safe_get_cfg_value("dispatch", "google_gcm_sender_id")
 
     @property
     def zeromq_relay_uri(self) -> str:
         """ returns relay URI for zeromq dispatcher"""
-        return self._cfg["dispatch"]["zeromq_relay_URI"]
+        return self._safe_get_cfg_value("dispatch","zeromq_relay_uri")
 
+
+    #NOTE can't use self._safe_get_cfg_value for debug. It is special,
+    #because it is used in determining what to do in the event of a crash
     @property
     def debug(self) -> bool:
         """ returns desired debug state of application.
         Overridden by the value of environment variable FLASK_DEBUG """
         if int(os.getenv("FLASK_DEBUG", "0")):
             return True
-
-        return bool(int(self._cfg["server"]["debug"]))
+        return self._safe_get_cfg_value("server","debug")

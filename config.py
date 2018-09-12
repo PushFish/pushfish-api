@@ -9,7 +9,7 @@ import appdirs
 _LOGGER = logging.getLogger("pushrocket-api")
 APPNAME = "pushrocket-api"
 
-T = TypeVar("T", bound="TrivialClass")
+T = TypeVar("T", bound="Config")
 
 def get_config_file_path() -> str:
     """
@@ -66,24 +66,27 @@ def write_default_config(path: str = None, overwrite: bool = False):
 
     cfg = configparser.ConfigParser(allow_no_value=True)
     cfg.add_section("database")
-    cfg.set("database", """#for mysql, use something like:
- #uri = 'mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4'""")
+    db_uridockstr = """#for mysql, use something like:
+ #uri = 'mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4'"""
+
+    cfg.set("database", db_uridockstr) #type:ignore
     dbpath = os.path.join(appdirs.user_data_dir(APPNAME), "pushrocket-api.db")
     if not os.path.exists(appdirs.user_data_dir(APPNAME)):
         _LOGGER.info("creating directory for local sqlite database store")
         os.mkdir(appdirs.user_data_dir(APPNAME))
-    
+
     cfg["database"]["uri"] = "sqlite:///" + dbpath
 
     cfg.add_section("dispatch")
-    cfg.set("dispatch", """#point zeromq_relay_uri at the zeromq pubsub socket for 
- #the pushrocket connectors """)
+    zmq_dockstr = """#point zeromq_relay_uri at the zeromq pubsub socket for
+ #the pushrocket connectors """
+    cfg.set("dispatch", zmq_dockstr) #type:ignore
     cfg["dispatch"]["google_api_key"] = ""
     cfg["dispatch"]["google_gcm_sender_id"] = str(509878466986)
     cfg["dispatch"]["zeromq_relay_uri"] = ""
 
     cfg.add_section("server")
-    cfg.set("server", """#set debug to 0 for production mode """)
+    cfg.set("server", """#set debug to 0 for production mode """) #type:ignore
     cfg["server"]["debug"] = str(int(True))
 
     cfgdir = os.path.dirname(path)
@@ -97,20 +100,20 @@ def write_default_config(path: str = None, overwrite: bool = False):
 
 
 class Config:
-    GLOBAL_INSTANCE = None
     """ reader for pushrocket config file """
-    
+    GLOBAL_INSTANCE = None
+
     @classmethod
-    def get_global_instance(cls : Type[T]) -> T:
+    def get_global_instance(cls: Type[T]) -> T:
         """ returns the a global instance of the Config object.
         If one has not yet been defined, raises a RuntimeError"""
         if cls.GLOBAL_INSTANCE is None:
             raise RuntimeError("no global config instance exists. Construct a \
                                Config instance somewhere in the application")
-        
+
         return cls.GLOBAL_INSTANCE
-    
-    def __init__(self, path:str = None, create:bool = False):
+
+    def __init__(self, path: str = None, create: bool = False) -> None:
         """
         arguments:
             path: path for config file. If not specified, calls get_default_config_path()
@@ -158,9 +161,7 @@ class Config:
     def debug(self) -> bool:
         """ returns desired debug state of application.
         Overridden by the value of environment variable FLASK_DEBUG """
-        if int(os.getenv("FLASK_DEBUG", 0)):
+        if int(os.getenv("FLASK_DEBUG", "0")):
             return True
 
         return bool(int(self._cfg["server"]["debug"]))
-
-    

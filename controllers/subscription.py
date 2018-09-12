@@ -3,7 +3,9 @@ from utils import Error, has_service, has_uuid, queue_zmq_message
 from shared import db
 from models import Subscription
 from json import dumps as json_encode
-from config import zeromq_relay_uri
+from config import Config
+
+cfg = Config.get_global_instance()
 
 subscription = Blueprint('subscription', __name__)
 

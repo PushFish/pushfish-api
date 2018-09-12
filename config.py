@@ -97,6 +97,8 @@ class Config:
     
     @classmethod
     def get_global_instance(cls):
+        """ returns the a global instance of the Config object.
+        If one has not yet been defined, raises a RuntimeError"""
         if cls.GLOBAL_INSTANCE is None:
             raise RuntimeError("no global config instance exists. Construct a \
                                Config instance somewhere in the application")

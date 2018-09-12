@@ -19,10 +19,7 @@ gcm_enabled = True
 if cfg.google_api_key == '':
     stderr.write("WARNING: GCM disabled, please enter the google api key for gcm")
     gcm_enabled = False
-if not isinstance(cfg.google_gcm_sender_id, int):
-    stderr.write("WARNING: GCM disabled, sender id is not an integer")
-    gcm_enabled = False
-elif cfg.google_gcm_sender_id == 0:
+if cfg.google_gcm_sender_id == 0:
     stderr.write('WARNING: GCM disabled, invalid sender id found')
     gcm_enabled = False
 

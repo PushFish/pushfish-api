@@ -172,6 +172,13 @@ class Config:
             Config.GLOBAL_BACKTRACE_ENABLE = True
 
         self._check_spurious_keys()
+        
+        self._envdbpath = False
+        dbpathenv = os.getenv("PUSHROCKET_DB")
+        if dbpathenv:
+            self._envdbpath = True
+            self._envdbval = dbpathenv
+        
 
     def _check_spurious_keys(self):
         for section in self._cfg.sections():
@@ -212,6 +219,9 @@ class Config:
     @property
     def database_uri(self) -> str:
         """ returns the database connection URI"""
+
+        if self._envdbpath:
+            return self._envdbval
 
         #HACK: create directory to run db IF AND ONLY IF it's identical to
         #default and doesn't exist. Please get rid of this with something 

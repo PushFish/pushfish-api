@@ -1,0 +1,11 @@
+# Official docker image.
+image: docker:latest
+
+services:
+  - docker:dind
+
+build:
+  stage: build
+  script:
+    - docker build --pull -t pushrocket-api:latest .
+    - docker run pushrocket-api:latest python tests.py

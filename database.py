@@ -2,9 +2,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from shared import db
-import config
+from config import Config
 
-engine = create_engine(config.database_uri, convert_unicode=True)
+cfg = Config.get_global_instance()
+
+engine = create_engine(cfg.database_uri, convert_unicode=True)
 db_session = scoped_session(sessionmaker(autocommit=False,
                                          autoflush=False,
                                          bind=engine))

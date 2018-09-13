@@ -11,7 +11,7 @@ class Service(db.Model):
     id = db.Column(Integer, primary_key=True)
     secret = db.Column(db.VARCHAR(32), nullable=False)
     public = db.Column(db.VARCHAR(40), nullable=False)
-    name = db.Column(db.VARCHAR(255), nullable=False)
+    name = db.Column(db.Unicode(length=255),nullable=False)
     icon = db.Column(db.TEXT, nullable=False, default='')
     timestamp_created = db.Column(db.TIMESTAMP, default=datetime.utcnow)
 
@@ -19,7 +19,7 @@ class Service(db.Model):
         self.secret = hashlib.sha1(urandom(100)).hexdigest()[:32]
         self.name = name
         self.icon = icon
-        pub = list(hashlib.new('ripemd160', self.secret).hexdigest())[:40]
+        pub = list(hashlib.new('ripemd160', self.secret.encode("UTF-8")).hexdigest())[:40]
         sep = [4, 11, 24, 30]
         for s in sep:
             pub[s] = '-'

@@ -1,6 +1,6 @@
+pymysql
 sqlalchemy
 flask
 flask-sqlalchemy
 pyzmq
 requests
-appdirs

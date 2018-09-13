@@ -3,7 +3,9 @@ from utils import Error, has_service, has_uuid, queue_zmq_message
 from shared import db
 from models import Subscription
 from json import dumps as json_encode
-from config import zeromq_relay_uri
+from config import Config
+
+cfg = Config.get_global_instance()
 
 subscription = Blueprint('subscription', __name__)
 
@@ -20,7 +22,7 @@ def subscription_post(client, service):
     db.session.add(subscription_new)
     db.session.commit()
 
-    if zeromq_relay_uri:
+    if cfg.zeromq_relay_uri:
         queue_zmq_message(json_encode({'subscription': subscription_new.as_dict()}))
 
     return jsonify({'service': service.as_dict()})

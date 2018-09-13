@@ -1,9 +1,13 @@
+from json import dumps as json_encode
+
 from flask import Blueprint, jsonify, request
 from utils import Error, is_service, is_secret, has_secret, queue_zmq_message
+
 from models import Service, Message
 from shared import db
-from json import dumps as json_encode
-from config import zeromq_relay_uri
+from config import Config
+
+cfg = Config.get_global_instance()
 
 service = Blueprint('service', __name__)
 
@@ -55,7 +59,7 @@ def service_delete(service):
     # In case we need to send this at a later point
     # when the subscriptions have been deleted.
     send_later = []
-    if zeromq_relay_uri:
+    if cfg.zeromq_relay_uri:
         for l in subscriptions:
             send_later.append(json_encode({'subscription': l.as_dict()}))
 
@@ -66,7 +70,7 @@ def service_delete(service):
     db.session.commit()
 
     # Notify that the subscriptions have been deleted
-    if zeromq_relay_uri:
+    if cfg.zeromq_relay_uri:
         map(queue_zmq_message, send_later)
 
     return Error.NONE
@@ -80,12 +84,12 @@ def service_patch(service):
 
     for field in fields:
         data = request.form.get(field, '').strip()
-        if data is not '':
+        if data != '':
             setattr(service, field, data)
             updated = True
 
     if updated:
         db.session.commit()
         return Error.NONE
-    else:
-        return Error.NO_CHANGES
+
+    return Error.NO_CHANGES

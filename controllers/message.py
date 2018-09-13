@@ -1,12 +1,16 @@
+from datetime import datetime
+from json import dumps as json_encode
+
 from flask import Blueprint, jsonify, request
 from flask import current_app
 
 from utils import Error, has_uuid, has_secret, queue_zmq_message
 from shared import db
 from models import Subscription, Message, Gcm
-from datetime import datetime
-from config import zeromq_relay_uri, google_api_key
-from json import dumps as json_encode
+from config import Config
+
+
+cfg = Config.get_global_instance()
 
 message = Blueprint('message', __name__)
 
@@ -32,10 +36,10 @@ def message_send(service):
     db.session.add(msg)
     db.session.commit()
 
-    if google_api_key or current_app.config['TESTING']:
+    if cfg.google_api_key or current_app.config['TESTING']:
         Gcm.send_message(msg)
 
-    if zeromq_relay_uri:
+    if cfg.zeromq_relay_uri:
         queue_zmq_message(json_encode({"message": msg.as_dict()}))
 
     service.cleanup()
@@ -47,7 +51,7 @@ def message_send(service):
 @has_uuid
 def message_recv(client):
     subscriptions = Subscription.query.filter_by(device=client).all()
-    if len(subscriptions) == 0:
+    if not subscriptions:
         return jsonify({'messages': []})
 
     msg = []
@@ -69,7 +73,7 @@ def message_recv(client):
 @has_uuid
 def message_read(client):
     subscriptions = Subscription.query.filter_by(device=client).all()
-    if len(subscriptions) > 0:
+    if subscriptions:
         last_message = Message.query.order_by(Message.id.desc()).first()
         for l in subscriptions:
             l.timestamp_checked = datetime.utcnow()

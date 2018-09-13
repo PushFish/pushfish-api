@@ -2,9 +2,11 @@ from flask import current_app
 from shared import db
 from sqlalchemy import Integer
 from datetime import datetime
-from config import google_api_key
+from config import Config
 from models import Subscription, Message
 import requests
+
+cfg = Config.get_global_instance()
 
 gcm_url = 'https://android.googleapis.com/gcm/send'
 
@@ -58,7 +60,7 @@ class Gcm(db.Model):
     @staticmethod
     def gcm_send(ids, data):
         url = 'https://android.googleapis.com/gcm/send'
-        headers = dict(Authorization='key={}'.format(google_api_key))
+        headers = dict(Authorization='key={}'.format(cfg.google_api_key))
         data = dict(registration_ids=ids, data=data)
 
         if current_app.config['TESTING'] is True:

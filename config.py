@@ -109,7 +109,8 @@ def write_default_config(path: str = None, overwrite: bool = False):
 
     cfgdir = os.path.dirname(path)
     if not os.path.exists(cfgdir):
-        os.mkdir(cfgdir)
+        if cfgdir:
+            os.mkdir(cfgdir)
         with open(path, "x") as f:
             cfg.write(f)
     else:

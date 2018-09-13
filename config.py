@@ -20,16 +20,13 @@ T = TypeVar("T", bound="Config")
 
 def construct_default_db_uri() -> str:
     dbpath = os.path.join(appdirs.user_data_dir(APPNAME), "pushrocket-api.db")
-    if not os.path.exists(appdirs.user_data_dir(APPNAME)):
-        _LOGGER.info("creating directory for local sqlite database store")
-        os.mkdir(appdirs.user_data_dir(APPNAME))
     return "sqlite:///" + dbpath
 
 
 
 DEFAULT_VALUES = {"database" : {"uri" : DefaultOpt(construct_default_db_uri, str, True)},
                   "dispatch" : {"google_api_key" : DefaultOpt("", str, False),
-                                 "google_gcm_sender_id" : DefaultOpt(509878466986, bool, True),
+                                 "google_gcm_sender_id" : DefaultOpt(123456789012, bool, True),
                                  "zeromq_relay_uri" : DefaultOpt("", str, False)},
                   "server" : {"debug" : DefaultOpt(0, bool, False)}}
 
@@ -215,7 +212,24 @@ class Config:
     @property
     def database_uri(self) -> str:
         """ returns the database connection URI"""
-        return self._safe_get_cfg_value("database", "uri")
+
+        #HACK: create directory to run db IF AND ONLY IF it's identical to
+        #default and doesn't exist. Please get rid of this with something 
+        #better soon
+        val = self._safe_get_cfg_value("database","uri")
+        if val == construct_default_db_uri():
+            datadb = os.path.dirname(val).split("sqlite:///")[1]
+            if not os.path.exists(datadb):
+                try:
+                    os.mkdir(datadb)
+                except PermissionError as err:
+                    _LOGGER.critical("can't create default database directory. Exiting...")
+                    if self.debug:
+                        raise err
+                    else:
+                        sys.exit(1)
+
+        return val
 
     @property
     def google_api_key(self) -> str:
@@ -232,9 +246,6 @@ class Config:
         """ returns relay URI for zeromq dispatcher"""
         return self._safe_get_cfg_value("dispatch", "zeromq_relay_uri")
 
-
-    #NOTE can't use self._safe_get_cfg_value for debug. It is special,
-    #because it is used in determining what to do in the event of a crash
     @property
     def debug(self) -> bool:
         """ returns desired debug state of application.

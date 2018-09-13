@@ -4,6 +4,8 @@ from __future__ import unicode_literals
 from flask import Flask, redirect, send_from_directory, request
 from sys import stderr
 import logging
+from sqlalchemy.exc import OperationalError
+import sys
 
 from config import Config
 _LOGGER = logging.getLogger(name="pushrocket_API")
@@ -39,8 +41,15 @@ app.config['SQLALCHEMY_DATABASE_URI'] = cfg.database_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 db.app = app
-database.init_db()
 
+try:
+    database.init_db()
+except Exception as err:
+    _LOGGER.error("couldn't initialize database with URI: %s",cfg.database_uri)
+    if cfg.GLOBAL_BACKTRACE_ENABLE:
+        raise err
+    else:
+        sys.exit(1)
 
 @app.route('/')
 def index():

@@ -67,7 +67,8 @@ def get_config_file_path() -> str:
     if not cfile:
         _LOGGER.info("PUSHROCKET_CONFIG is not set, using default config file location")
     elif not os.path.exists(cfile):
-        _LOGGER.error("PUSHROCKET_CONFIG file path is invalid: %s", cfile)
+        _LOGGER.warning("PUSHROCKET_CONFIG file path does not exist, it will be created: %s", cfile)
+        return cfile
     else:
         return cfile
 

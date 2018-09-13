@@ -1,9 +1,12 @@
 from re import compile
 from json import dumps
-from flask import request, jsonify
 from functools import wraps
+
+from flask import request, jsonify
+
 from models import Service
 from shared import zmq_relay_socket
+
 
 uuid = compile(r'^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$')
 service = compile(r'^[a-zA-Z0-9]{4}-[a-zA-Z0-9]{6}-[a-zA-Z0-9]{12}-[a-zA-Z0-9]{5}-[a-zA-Z0-9]{9}$')
@@ -15,7 +18,7 @@ QUERY_ACTION_NEW_MESSAGE = 0
 QUERY_UPDATE_LISTEN = 1
 
 
-class Error(object):
+class Error:
     @staticmethod
     def _e(message, error_code, http_status):
         return (dumps({'error': {'message': message, 'id': error_code}}), http_status)

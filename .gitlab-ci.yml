@@ -4,8 +4,35 @@ image: docker:latest
 services:
   - docker:dind
 
+stages:
+  - build
+  - test
+  - release
+
+variables:
+  CONTAINER_TEST_IMAGE: registry.gitlab.com/pushrocket/pushrocket-api:$CI_COMMIT_REF_SLUG
+  CONTAINER_RELEASE_IMAGE: registry.gitlab.com/pushrocket/pushrocket-api:latest
+
+before_script:
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+
 build:
   stage: build
   script:
-    - docker build --pull -t pushrocket-api:latest .
-    - docker run pushrocket-api:latest python tests.py
+    - docker build --pull -t $CONTAINER_TEST_IMAGE .
+    - docker push $CONTAINER_TEST_IMAGE
+
+unitests:
+  stage: test
+  script:
+    - docker pull $CONTAINER_TEST_IMAGE
+    - docker run $CONTAINER_TEST_IMAGE python tests.py
+
+release-image:
+  stage: release
+  script:
+    - docker pull $CONTAINER_TEST_IMAGE
+    - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_RELEASE_IMAGE
+    - docker push $CONTAINER_RELEASE_IMAGE
+  only:
+    - master

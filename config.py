@@ -9,7 +9,9 @@ import warnings
 
 import appdirs
 
-DefaultOpt = namedtuple("opt", ["default", "type", "required"])
+
+ConfigOption = namedtuple("ConfigOption", ["default", "type", "required",
+                                         "envvar", "comment"])
 
 APPNAME = "pushrocket-api"
 _LOGGER = logging.getLogger(APPNAME)
@@ -23,21 +25,20 @@ def construct_default_db_uri() -> str:
     return "sqlite:///" + dbpath
 
 
+db_uri_comment = """#for mysql, use something like:
+#uri = 'mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4'"""
+dispatch_zmq_comment = """#point zeromq_relay_uri at the zeromq pubsub socket for
+#the pushrocket connectors """
+server_debug_comment = """#set debug to 0 for production mode """
 
-DEFAULT_VALUES = {"database" : {"uri" : DefaultOpt(construct_default_db_uri, str, True)},
-                  "dispatch" : {"google_api_key" : DefaultOpt("", str, False),
-                                 "google_gcm_sender_id" : DefaultOpt(123456789012, bool, True),
-                                 "zeromq_relay_uri" : DefaultOpt("", str, False)},
-                  "server" : {"debug" : DefaultOpt(0, bool, False)}}
-
-COMMENTS = {"database" : """#for mysql, use something like:
-#uri = 'mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4'""",
-            "dispatch" : """#point zeromq_relay_uri at the zeromq pubsub socket for
-#the pushrocket connectors """,
-            "server" :  """#set debug to 0 for production mode """}
-
+DEFAULT_VALUES = {"database" : {"uri" : ConfigOption(construct_default_db_uri, str, True, "PUSHROCKET_DB", db_uri_comment)},
+                  "dispatch" : {"google_api_key" : ConfigOption("", str, False, "PUSHROCKET_GOOGLE_API_KEY", None),
+                                "google_gcm_sender_id" : ConfigOption(123456789012, bool, True, "PUSHROCKET_GCM_SENDER_ID", None),
+                                "zeromq_relay_uri" : ConfigOption("", str, False, "PUSHROCKET_ZMQ_RELAY_URI", dispatch_zmq_comment)},
+                  "server" : {"debug" : ConfigOption(0, bool, False, "PUSHROCKET_DEBUG", server_debug_comment)}}
 
 def call_if_callable(v, *args, **kwargs):
+    """ if v is callable, call it with args and kwargs. If not, return v itself """
     return v(*args, **kwargs) if callable(v) else v
 
 
@@ -99,9 +100,10 @@ def write_default_config(path: str = None, overwrite: bool = False):
 
     for section, settings in DEFAULT_VALUES.items():
         cfg.add_section(section)
-        cfg.set(section, COMMENTS[section])
         for setting, value in settings.items():
             v = call_if_callable(value.default)
+            if value.comment is not None:
+                cfg.set(section, value.comment)
             cfg[section][setting] = str(v)
 
     cfgdir = os.path.dirname(path)
@@ -172,13 +174,22 @@ class Config:
             Config.GLOBAL_BACKTRACE_ENABLE = True
 
         self._check_spurious_keys()
-        
-        self._envdbpath = False
-        dbpathenv = os.getenv("PUSHROCKET_DB")
-        if dbpathenv:
-            self._envdbpath = True
-            self._envdbval = dbpathenv
-        
+        self._load_from_env_vars()
+
+    def _load_from_env_vars(self):
+        for section, optdict in DEFAULT_VALUES.items():
+            for name, opt in optdict.items():
+                envval = os.getenv(opt.envvar)
+                if envval:
+                    _LOGGER.info("overriding config setting %s from environment variable %s", name, opt.envvar)
+                    try:
+                        self._cfg[section][name] = envval
+                    except ValueError as err:
+                        errstr = "couldn't get value of type %s for setting %s"
+                        fatal_error_exit_or_backtrace(err, errstr, _LOGGER, opt.type, name)
+                    except Exception as err:
+                        errstr = "failed to set value of setting %s from environment"
+                        fatal_error_exit_or_backtrace(err, errstr, _LOGGER, name)
 
     def _check_spurious_keys(self):
         for section in self._cfg.sections():
@@ -199,46 +210,30 @@ class Config:
         try:
             return opt.type(self._cfg[section][key])
         except KeyError as err:
-            reportstr = "no value for configuration option: %s in section [%s] defined" % (key, section)
-
+            reportstr = "no value for REQUIRED configuration option: %s in section [%s] defined" % (key, section)
             if opt.required:
-                _LOGGER.critical(reportstr)
-                _LOGGER.critical("a value for this option is REQUIRED")
-                _LOGGER.critical("pushrocket-api cannot continue, exiting..")
-
-                if Config.GLOBAL_BACKTRACE_ENABLE:
-                    raise err
-                else:
-                    sys.exit(1)
+                fatal_error_exit_or_backtrace(err, reportstr, _LOGGER)
             else:
                 _LOGGER.warning(reportstr)
                 defvalue = call_if_callable(opt.default)
-                _LOGGER.warning("using default value of %s" % str(defvalue))
+                _LOGGER.warning("using default value of %s", str(defvalue))
                 return opt.type(defvalue)
 
     @property
     def database_uri(self) -> str:
         """ returns the database connection URI"""
-
-        if self._envdbpath:
-            return self._envdbval
-
         #HACK: create directory to run db IF AND ONLY IF it's identical to
-        #default and doesn't exist. Please get rid of this with something 
+        #default and doesn't exist. Please get rid of this with something
         #better soon
-        val = self._safe_get_cfg_value("database","uri")
+        val = self._safe_get_cfg_value("database", "uri")
         if val == construct_default_db_uri():
             datadb = os.path.dirname(val).split("sqlite:///")[1]
             if not os.path.exists(datadb):
                 try:
                     os.mkdir(datadb)
                 except PermissionError as err:
-                    _LOGGER.critical("can't create default database directory. Exiting...")
-                    if self.debug:
-                        raise err
-                    else:
-                        sys.exit(1)
-
+                    errstr = "can't create default database directory. Exiting..."
+                    fatal_error_exit_or_backtrace(err, errstr, _LOGGER)
         return val
 
     @property
@@ -263,3 +258,33 @@ class Config:
         if int(os.getenv("FLASK_DEBUG", "0")):
             return True
         return self._safe_get_cfg_value("server", "debug")
+
+
+def fatal_error_exit_or_backtrace(err: Exception,
+                                  msg: str,
+                                  logger: logging.Logger,
+                                  *logargs, **logkwargs):
+    """ standard handling of fatal errors. Logs a critical error, then, if
+    debug mode is enabled, rethrows the error (to get a backtrace or debug),
+    and if not, exits the program with return code 1
+
+    arguments:
+        err: the exception that caused this situation. Can be None, in which case
+        will not be re-raised
+
+        msg: the message you want to log
+        logger: the logger to log to. Can be None, in which case a default logger
+        will be obtained
+
+        logargs, logkwargs: arguments to pass on to the logging function
+
+    """
+    if logger is None:
+        logger = logging.getLogger("pushrocket-api")
+
+    logger.critical(msg, *logargs, **logkwargs)
+    logger.critical("exiting...")
+    if Config.GLOBAL_BACKTRACE_ENABLE:
+        if err is not None:
+            raise err
+    sys.exit(1)

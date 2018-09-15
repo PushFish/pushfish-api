@@ -10,7 +10,8 @@ import warnings
 import appdirs
 
 
-DefaultOpt = namedtuple("opt", ["default", "type", "required", "envvar"])
+ConfigOption = namedtuple("ConfigOption", ["default", "type", "required",
+                                         "envvar", "comment"])
 
 APPNAME = "pushrocket-api"
 _LOGGER = logging.getLogger(APPNAME)
@@ -24,19 +25,17 @@ def construct_default_db_uri() -> str:
     return "sqlite:///" + dbpath
 
 
+db_uri_comment = """#for mysql, use something like:
+#uri = 'mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4'"""
+dispatch_zmq_comment = """#point zeromq_relay_uri at the zeromq pubsub socket for
+#the pushrocket connectors """
+server_debug_comment = """#set debug to 0 for production mode """
 
-DEFAULT_VALUES = {"database" : {"uri" : DefaultOpt(construct_default_db_uri, str, True, "PUSHROCKET_DB")},
-                  "dispatch" : {"google_api_key" : DefaultOpt("", str, False, "PUSHROCKET_GOOGLE_API_KEY"),
-                                "google_gcm_sender_id" : DefaultOpt(123456789012, bool, True, "PUSHROCKET_GCM_SENDER_ID"),
-                                "zeromq_relay_uri" : DefaultOpt("", str, False, "PUSHROCKET_ZMQ_RELAY_URI")},
-                  "server" : {"debug" : DefaultOpt(0, bool, False, "PUSHROCKET_DEBUG")}}
-
-COMMENTS = {"database" : """#for mysql, use something like:
-#uri = 'mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4'""",
-            "dispatch" : """#point zeromq_relay_uri at the zeromq pubsub socket for
-#the pushrocket connectors """,
-            "server" :  """#set debug to 0 for production mode """}
-
+DEFAULT_VALUES = {"database" : {"uri" : ConfigOption(construct_default_db_uri, str, True, "PUSHROCKET_DB", db_uri_comment)},
+                  "dispatch" : {"google_api_key" : ConfigOption("", str, False, "PUSHROCKET_GOOGLE_API_KEY", None),
+                                "google_gcm_sender_id" : ConfigOption(123456789012, bool, True, "PUSHROCKET_GCM_SENDER_ID", None),
+                                "zeromq_relay_uri" : ConfigOption("", str, False, "PUSHROCKET_ZMQ_RELAY_URI", dispatch_zmq_comment)},
+                  "server" : {"debug" : ConfigOption(0, bool, False, "PUSHROCKET_DEBUG", server_debug_comment)}}
 
 def call_if_callable(v, *args, **kwargs):
     """ if v is callable, call it with args and kwargs. If not, return v itself """
@@ -101,9 +100,10 @@ def write_default_config(path: str = None, overwrite: bool = False):
 
     for section, settings in DEFAULT_VALUES.items():
         cfg.add_section(section)
-        cfg.set(section, COMMENTS[section])
         for setting, value in settings.items():
             v = call_if_callable(value.default)
+            if value.comment is not None:
+                cfg.set(section, value.comment)
             cfg[section][setting] = str(v)
 
     cfgdir = os.path.dirname(path)

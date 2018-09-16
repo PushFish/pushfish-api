@@ -11,7 +11,7 @@ class Service(db.Model):
     id = db.Column(Integer, primary_key=True)
     secret = db.Column(db.VARCHAR(32), nullable=False)
     public = db.Column(db.VARCHAR(40), nullable=False)
-    name = db.Column(db.Unicode(length=255),nullable=False)
+    name = db.Column(db.Unicode(length=255), nullable=False)
     icon = db.Column(db.TEXT, nullable=False, default='')
     timestamp_created = db.Column(db.TIMESTAMP, default=datetime.utcnow)
 

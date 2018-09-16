@@ -49,7 +49,8 @@ class Gcm(db.Model):
 
         if len(gcm_devices) > 0:
             uuids = [g.uuid for g in gcm_devices]
-            gcm_subscriptions = Subscription.query.filter_by(service=message.service).filter(Subscription.device.in_(uuids)).all()
+            gcm_subscriptions = Subscription.query.filter_by(service=message.service).filter(
+                Subscription.device.in_(uuids)).all()
             last_message = Message.query.order_by(Message.id.desc()).first()
             for l in gcm_subscriptions:
                 l.timestamp_checked = datetime.utcnow()

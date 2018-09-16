@@ -39,4 +39,3 @@ def gcm_unregister(client):
 def gcm_sender_id():
     data = dict(sender_id=cfg.google_gcm_sender_id)
     return jsonify(data)
-

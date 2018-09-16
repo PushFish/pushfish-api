@@ -9,7 +9,6 @@ from shared import db
 from models import Subscription, Message, Gcm
 from config import Config
 
-
 cfg = Config.get_global_instance()
 
 message = Blueprint('message', __name__)

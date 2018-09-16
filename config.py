@@ -9,13 +9,11 @@ import warnings
 
 import appdirs
 
-
 ConfigOption = namedtuple("ConfigOption", ["default", "type", "required",
-                                         "envvar", "comment"])
+                                           "envvar", "comment"])
 
 APPNAME = "pushrocket-api"
 _LOGGER = logging.getLogger(APPNAME)
-
 
 T = TypeVar("T", bound="Config")
 
@@ -31,11 +29,13 @@ dispatch_zmq_comment = """#point zeromq_relay_uri at the zeromq pubsub socket fo
 #the pushrocket connectors """
 server_debug_comment = """#set debug to 0 for production mode """
 
-DEFAULT_VALUES = {"database" : {"uri" : ConfigOption(construct_default_db_uri, str, True, "PUSHROCKET_DB", db_uri_comment)},
-                  "dispatch" : {"google_api_key" : ConfigOption("", str, False, "PUSHROCKET_GOOGLE_API_KEY", None),
-                                "google_gcm_sender_id" : ConfigOption(123456789012, bool, True, "PUSHROCKET_GCM_SENDER_ID", None),
-                                "zeromq_relay_uri" : ConfigOption("", str, False, "PUSHROCKET_ZMQ_RELAY_URI", dispatch_zmq_comment)},
-                  "server" : {"debug" : ConfigOption(0, bool, False, "PUSHROCKET_DEBUG", server_debug_comment)}}
+DEFAULT_VALUES = {
+    "database": {"uri": ConfigOption(construct_default_db_uri, str, True, "PUSHROCKET_DB", db_uri_comment)},
+    "dispatch": {"google_api_key": ConfigOption("", str, False, "PUSHROCKET_GOOGLE_API_KEY", None),
+                 "google_gcm_sender_id": ConfigOption(123456789012, bool, True, "PUSHROCKET_GCM_SENDER_ID", None),
+                 "zeromq_relay_uri": ConfigOption("", str, False, "PUSHROCKET_ZMQ_RELAY_URI", dispatch_zmq_comment)},
+    "server": {"debug": ConfigOption(0, bool, False, "PUSHROCKET_DEBUG", server_debug_comment)}}
+
 
 def call_if_callable(v, *args, **kwargs):
     """ if v is callable, call it with args and kwargs. If not, return v itself """
@@ -60,7 +60,7 @@ def get_config_file_path() -> str:
 
     """
 
-    #check environment variable first
+    # check environment variable first
     cfile = os.getenv("PUSHROCKET_CONFIG")
     if not cfile:
         _LOGGER.info("PUSHROCKET_CONFIG is not set, using default config file location")
@@ -132,7 +132,6 @@ class Config:
 
         return cls.GLOBAL_INSTANCE
 
-
     def __init__(self, path: str = None, create: bool = False,
                  overwrite: bool = False) -> None:
         """
@@ -161,8 +160,8 @@ class Config:
         with open(path, "r") as f:
             self._cfg.read_file(f)
 
-        #HACK: this is purely here so that the tests can override the global app
-        #config
+        # HACK: this is purely here so that the tests can override the global app
+        # config
         if hasattr(self, "INJECT_CONFIG"):
             warnings.warn("running with injected config. If you see this \
                           whilst not running tests it IS AN ERROR")
@@ -204,7 +203,6 @@ class Config:
                     _LOGGER.critical("don't know how to handle this, exiting...")
                     sys.exit(1)
 
-
     def _safe_get_cfg_value(self, section: str, key: str):
         opt = DEFAULT_VALUES[section][key]
         try:
@@ -222,9 +220,9 @@ class Config:
     @property
     def database_uri(self) -> str:
         """ returns the database connection URI"""
-        #HACK: create directory to run db IF AND ONLY IF it's identical to
-        #default and doesn't exist. Please get rid of this with something
-        #better soon
+        # HACK: create directory to run db IF AND ONLY IF it's identical to
+        # default and doesn't exist. Please get rid of this with something
+        # better soon
         val = self._safe_get_cfg_value("database", "uri")
         if val == construct_default_db_uri():
             datadb = os.path.dirname(val).split("sqlite:///")[1]

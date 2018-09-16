@@ -27,6 +27,7 @@ def _random_str(length=10, unicode=True):
 
     return random_str
 
+
 def _failing_loader(s):
     data = json.loads(s)
     if 'error' in data:
@@ -36,8 +37,8 @@ def _failing_loader(s):
     return data
 
 
-#NOTE: don't inherit these from unittest.TestCase, inherit the specialized
-#database classes that way, then they both get run
+# NOTE: don't inherit these from unittest.TestCase, inherit the specialized
+# database classes that way, then they both get run
 class PushRocketTestCase:
     @classmethod
     def setUpClass(cls):
@@ -46,7 +47,7 @@ class PushRocketTestCase:
         cls.config = Config(path=cls._tempfilepath, overwrite=True)
         cls.config.INJECT_CONFIG = True
         cls.config._cfg["database"]["uri"] = cls.URI
-        #manually override google_api_key to force GCM enable for testing purposes
+        # manually override google_api_key to force GCM enable for testing purposes
 
         if cls.config.google_api_key == "":
             _LOGGER.info("monkey patching google_api_key")
@@ -55,7 +56,6 @@ class PushRocketTestCase:
     @classmethod
     def tearDownClass(cls):
         os.unlink(cls._tempfilepath)
-
 
     def setUp(self):
         self.uuid = str(uuid4())
@@ -209,7 +209,7 @@ class PushRocketTestCase:
         resp = _failing_loader(rv.data)
         assert public not in [l['service']['public'] for l in resp['subscriptions']]
 
-        #check we on't receive the message anymore
+        # check we on't receive the message anymore
         rv = self.app.get('/message?uuid={}'.format(self.uuid))
         resp = _failing_loader(rv.data)
         assert not resp["messages"]
@@ -291,12 +291,12 @@ class PushRocketTestCase:
         assert message['service']['public'] == public
         assert message['message'] == data['message']
 
-#    def test_get_version(self):
-#        version = self.app.get('/version').data
-#
-#        assert len(version) is 7
-#        with open('.git/refs/heads/master', 'r') as f:
-#            assert f.read()[:7] == version
+    #    def test_get_version(self):
+    #        version = self.app.get('/version').data
+    #
+    #        assert len(version) is 7
+    #        with open('.git/refs/heads/master', 'r') as f:
+    #            assert f.read()[:7] == version
 
     def test_get_static(self):
         files = ['robots.txt', 'favicon.ico']
@@ -310,6 +310,7 @@ class PushRocketTestCase:
 
 class PushRocketSqliteTests(PushRocketTestCase, unittest.TestCase):
     URI = "sqlite:///pushrocket_api.db"
+
 
 class PushRocketMysqlTests(PushRocketTestCase, unittest.TestCase):
     URI = "mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4"

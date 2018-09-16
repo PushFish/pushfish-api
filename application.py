@@ -8,8 +8,8 @@ from sqlalchemy.exc import OperationalError
 import sys
 
 from config import Config
-_LOGGER = logging.getLogger(name="pushrocket_API")
 
+_LOGGER = logging.getLogger(name="pushrocket_API")
 
 if __name__ == "__main__":
     _LOGGER.info("running application as main, creating Config object")
@@ -19,8 +19,6 @@ else:
     cfg = Config.get_global_instance()
 
 import database
-
-
 
 from shared import db
 from controllers import subscription, message, service, gcm
@@ -34,7 +32,6 @@ if cfg.google_gcm_sender_id == 0:
     stderr.write('WARNING: GCM disabled, invalid sender id found')
     gcm_enabled = False
 
-
 app = Flask(__name__)
 app.debug = cfg.debug
 app.config['SQLALCHEMY_DATABASE_URI'] = cfg.database_uri
@@ -45,11 +42,12 @@ db.app = app
 try:
     database.init_db()
 except Exception as err:
-    _LOGGER.error("couldn't initialize database with URI: %s",cfg.database_uri)
+    _LOGGER.error("couldn't initialize database with URI: %s", cfg.database_uri)
     if cfg.GLOBAL_BACKTRACE_ENABLE:
         raise err
     else:
         sys.exit(1)
+
 
 @app.route('/')
 def index():

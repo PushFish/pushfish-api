@@ -1,8 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 import zmq
-#TODO: a better way of doing this
+# TODO: a better way of doing this
 from config import Config, fatal_error_exit_or_backtrace
-
 
 db = SQLAlchemy()
 

@@ -28,6 +28,18 @@ unitests:
     - docker pull $CONTAINER_TEST_IMAGE
     - docker run $CONTAINER_TEST_IMAGE python tests.py
 
+pylint:
+  image: python:3-slim
+  allow_failure: true
+  before_script:
+    - echo
+  stage: test
+  script:
+    - pip install --no-cache-dir -r requirements.txt
+    - pip install --no-cache-dir pylint
+    - FILES=$(find . -name "*.py")
+    - pylint ${FILES}
+
 release-image:
   stage: release
   script:

@@ -1,17 +1,16 @@
-from re import compile
+"""Shared utility functions"""
+import re
 from json import dumps
 from functools import wraps
-
-from flask import request, jsonify
 
 from models import Service
 from shared import zmq_relay_socket
 
-uuid = compile(r'^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$')
-service = compile(r'^[a-zA-Z0-9]{4}-[a-zA-Z0-9]{6}-[a-zA-Z0-9]{12}-[a-zA-Z0-9]{5}-[a-zA-Z0-9]{9}$')
+uuid = re.compile(r'^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$')
+service = re.compile(r'^[a-zA-Z0-9]{4}-[a-zA-Z0-9]{6}-[a-zA-Z0-9]{12}-[a-zA-Z0-9]{5}-[a-zA-Z0-9]{9}$')
 is_uuid = lambda s: uuid.match(s) is not None
 is_service = lambda s: service.match(s) is not None
-is_secret = lambda s: compile(r'^[a-zA-Z0-9]{32}$').match(s) is not None
+is_secret = lambda s: re.compile(r'^[a-zA-Z0-9]{32}$').match(s) is not None
 
 QUERY_ACTION_NEW_MESSAGE = 0
 QUERY_UPDATE_LISTEN = 1

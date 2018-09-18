@@ -1,13 +1,15 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # coding=utf-8
-from __future__ import unicode_literals
-from flask import Flask, redirect, send_from_directory, request
-from sys import stderr
-import logging
-from sqlalchemy.exc import OperationalError
+
+"""PushRocker API server component"""
+
 import sys
+import logging
+from flask import Flask, redirect, send_from_directory, request
 
 from config import Config
+
+VERSION = "0.1.0-ALPHA"
 
 _LOGGER = logging.getLogger(name="pushrocket_API")
 
@@ -15,7 +17,8 @@ if __name__ == "__main__":
     _LOGGER.info("running application as main, creating Config object")
     cfg = Config(create=True)
 else:
-    _LOGGER.info("running application not as main (probably test mode), using existing global config")
+    _LOGGER.info("running application not as main (probably test mode), "
+                 "using existing global config")
     cfg = Config.get_global_instance()
 
 import database
@@ -26,10 +29,10 @@ from utils import Error
 
 gcm_enabled = True
 if cfg.google_api_key == '':
-    stderr.write("WARNING: GCM disabled, please enter the google api key for gcm")
+    sys.stderr.write("WARNING: GCM disabled, please enter the google api key for gcm")
     gcm_enabled = False
 if cfg.google_gcm_sender_id == 0:
-    stderr.write('WARNING: GCM disabled, invalid sender id found')
+    sys.stderr.write('WARNING: GCM disabled, invalid sender id found')
     gcm_enabled = False
 
 app = Flask(__name__)
@@ -51,7 +54,7 @@ except Exception as err:
 
 @app.route('/')
 def index():
-    return redirect('https://www.pushrocket.net')
+    return redirect('https://docs.pushrocket.net')
 
 
 @app.route('/robots.txt')
@@ -62,9 +65,11 @@ def robots_txt():
 
 @app.route('/version')
 def version():
-    with open('.git/refs/heads/master', 'r') as f:
-        return f.read(7)
-
+    """
+    Show current server version.
+    :return: API server version
+    """
+    return VERSION
 
 @app.errorhandler(429)
 def limit_rate(e):

@@ -7,7 +7,6 @@ import unittest
 import string
 import random
 import json
-import tempfile
 import logging
 
 from config import Config
@@ -39,30 +38,18 @@ def _failing_loader(s):
 
 # NOTE: don't inherit these from unittest.TestCase, inherit the specialized
 # database classes that way, then they both get run
-class PushRocketTestCase:
-    @classmethod
-    def setUpClass(cls):
-        _LOGGER.info("running test cases with database URI: %s", cls.URI)
-        _tempfd, cls._tempfilepath = tempfile.mkstemp(text=True)
-        cls.config = Config(path=cls._tempfilepath, overwrite=True)
-        cls.config.INJECT_CONFIG = True
-        cls.config._cfg["database"]["uri"] = cls.URI
-        # manually override google_api_key to force GCM enable for testing purposes
-
-        if cls.config.google_api_key == "":
-            _LOGGER.info("monkey patching google_api_key")
-            cls.config._cfg["dispatch"]["google_api_key"] = "PLACEHOLDER"
-
-    @classmethod
-    def tearDownClass(cls):
-        os.unlink(cls._tempfilepath)
-
+class PushRocketTestCase(unittest.TestCase):
     def setUp(self):
         self.uuid = str(uuid4())
         from application import app
+        cfg = Config.get_global_instance()
 
         app.config['TESTING'] = True
         app.config['TESTING_GCM'] = []
+        self.gcm_enable = True
+        if not cfg.google_api_key:
+            _LOGGER.warning("GCM API key is not provided, won't test GCM")
+            self.gcm_enable = False
 
         self.gcm = app.config['TESTING_GCM']
         self.app = app.test_client()
@@ -262,34 +249,46 @@ class PushRocketTestCase:
         assert 'error' in rv and rv['error']['id'] == 7
 
     def test_gcm_register(self):
-        reg_id = _random_str(40, unicode=False)
-        data = {'uuid': self.uuid, 'regId': reg_id}
-        rv = self.app.post('/gcm', data=data).data
-        _failing_loader(rv)
-        return reg_id
+        if self.gcm_enable:
+            reg_id = _random_str(40, unicode=False)
+            data = {'uuid': self.uuid, 'regId': reg_id}
+            rv = self.app.post('/gcm', data=data).data
+            _failing_loader(rv)
+            return reg_id
+        else:
+            _LOGGER.warning("GCM is disabled, not testing gcm_register")
 
     def test_gcm_unregister(self):
-        self.test_gcm_register()
-        rv = self.app.delete('/gcm', data={'uuid': self.uuid}).data
-        _failing_loader(rv)
+        if self.gcm_enable:
+            self.test_gcm_register()
+            rv = self.app.delete('/gcm', data={'uuid': self.uuid}).data
+            _failing_loader(rv)
+        else:
+            _LOGGER.warning("GCM is disabled, not testing gcm_unregister")
 
     def test_gcm_register_double(self):
-        self.test_gcm_register()
-        self.test_gcm_register()
+        if self.gcm_enable:
+            self.test_gcm_register()
+            self.test_gcm_register()
+        else:
+            _LOGGER.warning("GCM is disabled, not testing gcm_register_double")
 
     def test_gcm_send(self):
-        reg_id = self.test_gcm_register()
-        public, _, data = self.test_message_send()
+        if self.gcm_enable:
+            reg_id = self.test_gcm_register()
+            public, _, data = self.test_message_send()
 
-        messages = [m['data'] for m in self.gcm
-                    if reg_id in m['registration_ids']]
+            messages = [m['data'] for m in self.gcm
+                        if reg_id in m['registration_ids']]
 
-        assert len(messages) is 1
-        assert messages[0]['encrypted'] is False
+            assert len(messages) is 1
+            assert messages[0]['encrypted'] is False
 
-        message = messages[0]['message']
-        assert message['service']['public'] == public
-        assert message['message'] == data['message']
+            message = messages[0]['message']
+            assert message['service']['public'] == public
+            assert message['message'] == data['message']
+        else:
+            _LOGGER.warning("GCM is disabled, not testing gcm_send")
 
     #    def test_get_version(self):
     #        version = self.app.get('/version').data
@@ -308,19 +307,11 @@ class PushRocketTestCase:
                 assert data == i.read()
 
 
-class PushRocketSqliteTests(PushRocketTestCase, unittest.TestCase):
-    URI = "sqlite:///pushrocket_api.db"
-
-
-class PushRocketMysqlTests(PushRocketTestCase, unittest.TestCase):
-    URI = "mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4"
-
-
 def load_tests(loader, standard_tests, pattern):
     suite = unittest.TestSuite()
-    for test_class in [PushRocketSqliteTests, PushRocketMysqlTests]:
-        tests = loader.loadTestsFromTestCase(test_class)
-        suite.addTests(tests)
+    test_class = PushRocketTestCase
+    tests = loader.loadTestsFromTestCase(test_class)
+    suite.addTests(tests)
     return suite
 
 

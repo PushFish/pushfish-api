@@ -2,7 +2,6 @@
 # coding=utf-8
 from __future__ import unicode_literals
 from flask import Flask, redirect, send_from_directory, request
-from sys import stderr
 import logging
 from sqlalchemy.exc import OperationalError
 import sys
@@ -11,12 +10,8 @@ from config import Config
 
 _LOGGER = logging.getLogger(name="pushrocket_API")
 
-if __name__ == "__main__":
-    _LOGGER.info("running application as main, creating Config object")
-    cfg = Config(create=True)
-else:
-    _LOGGER.info("running application not as main (probably test mode), using existing global config")
-    cfg = Config.get_global_instance()
+_LOGGER.info("creating Config object")
+cfg = Config(create=True)
 
 import database
 
@@ -26,10 +21,10 @@ from utils import Error
 
 gcm_enabled = True
 if cfg.google_api_key == '':
-    stderr.write("WARNING: GCM disabled, please enter the google api key for gcm")
+    _LOGGER.warning("WARNING: GCM disabled, please enter the google api key for gcm")
     gcm_enabled = False
 if cfg.google_gcm_sender_id == 0:
-    stderr.write('WARNING: GCM disabled, invalid sender id found')
+    _LOGGER.warning('WARNING: GCM disabled, invalid sender id found')
     gcm_enabled = False
 
 app = Flask(__name__)

@@ -15,12 +15,33 @@ variables:
 
 before_script:
   - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+  - docker run --rm --privileged multiarch/qemu-user-static:register
 
-build:
+build-amd64:
   stage: build
   script:
-    - docker build --pull -t $CONTAINER_TEST_IMAGE .
-    - docker push $CONTAINER_TEST_IMAGE
+    - docker build -f docker/Dockerfile.amd64 --pull -t $CONTAINER_TEST_IMAGE-amd64 .
+    - docker push $CONTAINER_TEST_IMAGE-amd64
+
+build-i386:
+  stage: build
+  script:
+    - docker build -f docker/Dockerfile.i386 --pull -t $CONTAINER_TEST_IMAGE-i386 .
+    - docker push $CONTAINER_TEST_IMAGE-i386
+
+build-arm32v6:
+  stage: build
+  script:
+    - wget https://github.com/multiarch/qemu-user-static/releases/download/v2.12.0-1/qemu-arm-static
+    - docker build -f docker/Dockerfile.arm32v6 --pull -t $CONTAINER_TEST_IMAGE-arm32v6 .
+    - docker push $CONTAINER_TEST_IMAGE-arm32v6
+
+build-arm64v8:
+  stage: build
+  script:
+    - wget https://github.com/multiarch/qemu-user-static/releases/download/v2.12.0-1/qemu-aarch64-static
+    - docker build -f docker/Dockerfile.arm64v8 --pull -t $CONTAINER_TEST_IMAGE-arm64v8 .
+    - docker push $CONTAINER_TEST_IMAGE-arm64v8
 
 unitests:
   stage: test

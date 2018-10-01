@@ -16,7 +16,7 @@ cfg = Config(create=True)
 import database
 
 from shared import db
-from controllers import subscription, message, service, gcm
+from controllers import subscription, message, service, gcm, mqtt
 from utils import Error
 
 gcm_enabled = True
@@ -26,6 +26,14 @@ if cfg.google_api_key == '':
 if cfg.google_gcm_sender_id == 0:
     _LOGGER.warning('WARNING: GCM disabled, invalid sender id found')
     gcm_enabled = False
+
+mqtt_enabled = True
+if cfg.mqtt_broker_address == '':
+    _LOGGER.warning("WARNING: MQTT disabled, please enter the address for mqtt broker")
+    mqtt_enabled = False
+if cfg.mqtt_broker_address == 0:
+    _LOGGER.warning('WARNING: MQTT disabled, invalid address for mqtt broker')
+    mqtt_enabled = False
 
 app = Flask(__name__)
 app.debug = cfg.debug
@@ -71,6 +79,8 @@ app.register_blueprint(message)
 app.register_blueprint(service)
 if gcm_enabled:
     app.register_blueprint(gcm)
+if mqtt_enabled:
+    app.register_blueprint(mqtt)
 
 if __name__ == '__main__':
     app.run()

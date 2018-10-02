@@ -56,9 +56,15 @@ class MQTT(db.Model):
     @staticmethod
     def gcm_send(uuids, data):
         url = cfg.mqtt_broker_address
+        if ":" in url:
+            port = url.split(":")[1]
+            url = url .split(":")[0]
+        else:
+            # default port
+            port = 1883
 
         client = mqtt_api.Client()
-        client.connect(url, 1883, 60)
+        client.connect(url, port, 60)
 
         for uuid in uuids:
             client.publish(uuid, str(data))

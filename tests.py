@@ -50,6 +50,10 @@ class PushRocketTestCase(unittest.TestCase):
         if not cfg.google_api_key:
             _LOGGER.warning("GCM API key is not provided, won't test GCM")
             self.gcm_enable = False
+        self.mqtt_enable = True
+        if not cfg.mqtt_broker_address:
+            _LOGGER.warning("MQTT broker address is not provided, won't test MQTT")
+            self.mqtt_enable = False
 
         self.gcm = app.config['TESTING_GCM']
         self.app = app.test_client()
@@ -289,6 +293,47 @@ class PushRocketTestCase(unittest.TestCase):
             assert message['message'] == data['message']
         else:
             _LOGGER.warning("GCM is disabled, not testing gcm_send")
+
+    def test_mqtt_register(self):
+        if self.mqtt_enable:
+            data = {'uuid': self.uuid}
+            rv = self.app.post('/mqtt', data=data).data
+            _failing_loader(rv)
+        else:
+            _LOGGER.warning("MQTT is disabled, not testing mqtt_register")
+
+    def test_mqtt_unregister(self):
+        if self.mqtt_enable:
+            self.test_mqtt_register()
+            rv = self.app.delete('/mqtt', data={'uuid': self.uuid}).data
+            _failing_loader(rv)
+        else:
+            _LOGGER.warning("MQTT is disabled, not testing mqtt_unregister")
+
+    def test_mqtt_register_double(self):
+        if self.mqtt_enable:
+            self.test_mqtt_register()
+            self.test_mqtt_unregister()
+        else:
+            _LOGGER.warning("MQTT is disabled, not testing MQTT_register_double")
+
+    # TODO: fix
+    # def test_mqtt_send(self):
+    #     if self.mqtt_enable:
+    #         self.test_mqtt_register()
+    #         public, _, data = self.test_message_send()
+    #
+    #         messages = [m['data'] for m in self.gcm
+    #                     if reg_id in m['registration_ids']]
+    #
+    #         assert len(messages) is 1
+    #         assert messages[0]['encrypted'] is False
+    #
+    #         message = messages[0]['message']
+    #         assert message['service']['public'] == public
+    #         assert message['message'] == data['message']
+    #     else:
+    #         _LOGGER.warning("GCM is disabled, not testing gcm_send")
 
     #    def test_get_version(self):
     #        version = self.app.get('/version').data

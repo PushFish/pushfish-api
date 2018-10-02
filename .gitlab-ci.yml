@@ -3,6 +3,7 @@ image: docker:latest
 
 services:
   - docker:dind
+  - toke/mosquitto:latest
 
 stages:
   - build
@@ -23,8 +24,6 @@ build:
     - docker push $CONTAINER_TEST_IMAGE
 
 unitests:
-  services:
-    - toke/mosquitto:latest
   stage: test
   script:
     - docker pull $CONTAINER_TEST_IMAGE

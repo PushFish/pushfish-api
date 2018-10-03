@@ -40,21 +40,21 @@ class MQTT(db.Model):
 
         if len(mqtt_devices) > 0:
             data = dict(message=message.as_dict(), encrypted=False)
-            MQTT.gcm_send([r.uuid for r in mqtt_devices], data)
+            MQTT.mqtt_send([r.uuid for r in mqtt_devices], data)
 
         if len(mqtt_devices) > 0:
             uuids = [g.uuid for g in mqtt_devices]
-            gcm_subscriptions = Subscription.query.filter_by(service=message.service).filter(
+            mqtt_subscriptions = Subscription.query.filter_by(service=message.service).filter(
                 Subscription.device.in_(uuids)).all()
             last_message = Message.query.order_by(Message.id.desc()).first()
-            for l in gcm_subscriptions:
+            for l in mqtt_subscriptions:
                 l.timestamp_checked = datetime.utcnow()
                 l.last_read = last_message.id if last_message else 0
             db.session.commit()
         return len(mqtt_devices)
 
     @staticmethod
-    def gcm_send(uuids, data):
+    def mqtt_send(uuids, data):
         url = cfg.mqtt_broker_address
         if ":" in url:
             port = url.split(":")[1]
@@ -68,3 +68,4 @@ class MQTT(db.Model):
 
         for uuid in uuids:
             client.publish(uuid, str(data))
+        client.disconnect()

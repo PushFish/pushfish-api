@@ -27,7 +27,7 @@ unitests:
   stage: test
   script:
     - docker pull $CONTAINER_TEST_IMAGE
-    - docker run -e MQTT_ADDRESS='mosquitto' $CONTAINER_TEST_IMAGE python tests.py
+    - docker run -e MQTT_ADDRESS='toke-mosquitto' $CONTAINER_TEST_IMAGE python tests.py
 
 pylint:
   image: python:3-slim

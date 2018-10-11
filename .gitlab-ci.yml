@@ -3,8 +3,6 @@ image: docker:latest
 
 services:
   - docker:dind
-  - name: toke/mosquitto:latest
-    alias: mqtt
 
 stages:
   - build
@@ -28,7 +26,11 @@ unitests:
   stage: test
   script:
     - docker pull $CONTAINER_TEST_IMAGE
-    - docker run -e MQTT_ADDRESS='mqtt' $CONTAINER_TEST_IMAGE python tests.py
+    - docker network create pushrocket
+    - docker run -d --name mqtt --network pushrocket toke/mosquitto:latest
+    - docker run -e MQTT_ADDRESS='mqtt' --network pushrocket $CONTAINER_TEST_IMAGE python tests.py
+    - docker stop mqtt
+    - docker rm mqtt
 
 pylint:
   image: python:3-slim

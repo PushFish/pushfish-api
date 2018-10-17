@@ -31,7 +31,8 @@ server_debug_comment = """#set debug to 0 for production mode """
 
 DEFAULT_VALUES = {
     "database": {"uri": ConfigOption(construct_default_db_uri, str, True, "PUSHROCKET_DB", db_uri_comment)},
-    "dispatch": {"google_api_key": ConfigOption("", str, False, "PUSHROCKET_GOOGLE_API_KEY", None),
+    "dispatch": {"mqtt_broker_address": ConfigOption("", str, False, "MQTT_ADDRESS", None),
+                 "google_api_key": ConfigOption("", str, False, "PUSHROCKET_GOOGLE_API_KEY", None),
                  "google_gcm_sender_id": ConfigOption(123456789012, bool, True, "PUSHROCKET_GCM_SENDER_ID", None),
                  "zeromq_relay_uri": ConfigOption("", str, False, "PUSHROCKET_ZMQ_RELAY_URI", dispatch_zmq_comment)},
     "server": {"debug": ConfigOption(0, bool, False, "PUSHROCKET_DEBUG", server_debug_comment)}}
@@ -233,6 +234,11 @@ class Config:
                     errstr = "can't create default database directory. Exiting..."
                     fatal_error_exit_or_backtrace(err, errstr, _LOGGER)
         return val
+
+    @property
+    def mqtt_broker_address(self) -> str:
+        """ returns MQTT server address"""
+        return self._safe_get_cfg_value("dispatch", "mqtt_broker_address")
 
     @property
     def google_api_key(self) -> str:

@@ -8,6 +8,9 @@ import string
 import random
 import json
 import logging
+from time import sleep
+from ast import literal_eval
+import paho.mqtt.client as mqtt_api
 
 from config import Config
 
@@ -36,6 +39,19 @@ def _failing_loader(s):
     return data
 
 
+_messages_received = []
+
+
+def _message_callback(client, userdata, message):
+    """
+    mqtt subscribe callback function
+    puts received messages in _messages_received
+    """
+    message = {"data": literal_eval(message.payload.decode("utf-8")), "topic": message.topic, "qos": message.qos,
+               "retain": message.retain}
+    _messages_received.append(message)
+
+
 # NOTE: don't inherit these from unittest.TestCase, inherit the specialized
 # database classes that way, then they both get run
 class PushRocketTestCase(unittest.TestCase):
@@ -50,6 +66,11 @@ class PushRocketTestCase(unittest.TestCase):
         if not cfg.google_api_key:
             _LOGGER.warning("GCM API key is not provided, won't test GCM")
             self.gcm_enable = False
+        self.mqtt_enable = True
+        self.mqtt_address = cfg.mqtt_broker_address
+        if not cfg.mqtt_broker_address:
+            _LOGGER.warning("MQTT broker address is not provided, won't test MQTT")
+            self.mqtt_enable = False
 
         self.gcm = app.config['TESTING_GCM']
         self.app = app.test_client()
@@ -289,6 +310,65 @@ class PushRocketTestCase(unittest.TestCase):
             assert message['message'] == data['message']
         else:
             _LOGGER.warning("GCM is disabled, not testing gcm_send")
+
+    def test_mqtt_register(self):
+        if self.mqtt_enable:
+            data = {'uuid': self.uuid}
+            rv = self.app.post('/mqtt', data=data).data
+            _failing_loader(rv)
+        else:
+            _LOGGER.warning("MQTT is disabled, not testing mqtt_register")
+
+    def test_mqtt_unregister(self):
+        if self.mqtt_enable:
+            self.test_mqtt_register()
+            rv = self.app.delete('/mqtt', data={'uuid': self.uuid}).data
+            _failing_loader(rv)
+        else:
+            _LOGGER.warning("MQTT is disabled, not testing mqtt_unregister")
+
+    def test_mqtt_register_double(self):
+        if self.mqtt_enable:
+            self.test_mqtt_register()
+            self.test_mqtt_unregister()
+        else:
+            _LOGGER.warning("MQTT is disabled, not testing MQTT_register_double")
+
+    def test_mqtt_send(self):
+        """
+        test if message pushed to PushRocket can be received from the mqtt broker
+        """
+        if self.mqtt_enable:
+            self.test_mqtt_register()
+
+            url = self.mqtt_address
+            if ":" in url:
+                port = url.split(":")[1]
+                url = url.split(":")[0]
+            else:
+                # default port
+                port = 1883
+
+            client = mqtt_api.Client()
+            client.connect(url, port, 60)
+
+            client.subscribe(self.uuid)
+            client.on_message = _message_callback
+            client.loop_start()
+            public, _, data = self.test_message_send()
+            sleep(2)
+            client.loop_stop()
+            client.disconnect()
+
+            assert len(_messages_received) is 1
+
+            mqtt_data = _messages_received[0]
+            assert mqtt_data['topic'] == self.uuid
+            message = mqtt_data['data']['message']
+            assert message['service']['public'] == public
+            assert message['message'] == data['message']
+        else:
+            _LOGGER.warning("MQTT is disabled, not testing mqtt_send")
 
     #    def test_get_version(self):
     #        version = self.app.get('/version').data

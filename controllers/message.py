@@ -6,7 +6,7 @@ from flask import current_app
 
 from utils import Error, has_uuid, has_secret, queue_zmq_message
 from shared import db
-from models import Subscription, Message, Gcm
+from models import Subscription, Message, Gcm, MQTT
 from config import Config
 
 cfg = Config.get_global_instance()
@@ -37,6 +37,9 @@ def message_send(service):
 
     if cfg.google_api_key or current_app.config['TESTING']:
         Gcm.send_message(msg)
+
+    if cfg.mqtt_broker_address:
+        MQTT.send_message(msg)
 
     if cfg.zeromq_relay_uri:
         queue_zmq_message(json_encode({"message": msg.as_dict()}))

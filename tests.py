@@ -14,7 +14,7 @@ import paho.mqtt.client as mqtt_api
 
 from config import Config
 
-_LOGGER = logging.getLogger("pushrocket-api-TESTS")
+_LOGGER = logging.getLogger("pushfish-api-TESTS")
 
 
 def _random_str(length=10, unicode=True):
@@ -54,7 +54,7 @@ def _message_callback(client, userdata, message):
 
 # NOTE: don't inherit these from unittest.TestCase, inherit the specialized
 # database classes that way, then they both get run
-class PushRocketTestCase(unittest.TestCase):
+class PushFishTestCase(unittest.TestCase):
     def setUp(self):
         self.uuid = str(uuid4())
         from application import app
@@ -336,7 +336,7 @@ class PushRocketTestCase(unittest.TestCase):
 
     def test_mqtt_send(self):
         """
-        test if message pushed to PushRocket can be received from the mqtt broker
+        test if message pushed to PushFish can be received from the mqtt broker
         """
         if self.mqtt_enable:
             self.test_mqtt_register()
@@ -389,7 +389,7 @@ class PushRocketTestCase(unittest.TestCase):
 
 def load_tests(loader, standard_tests, pattern):
     suite = unittest.TestSuite()
-    test_class = PushRocketTestCase
+    test_class = PushFishTestCase
     tests = loader.loadTestsFromTestCase(test_class)
     suite.addTests(tests)
     return suite

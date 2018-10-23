@@ -1,4 +1,4 @@
 **/*.pyc
 __pycache__
-pushrocket-api.cfg
-pushrocket-api.db
+pushfish-api.cfg
+pushfish-api.db

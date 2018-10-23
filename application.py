@@ -8,7 +8,7 @@ import sys
 
 from config import Config
 
-_LOGGER = logging.getLogger(name="pushrocket_API")
+_LOGGER = logging.getLogger(name="pushfish_API")
 
 _LOGGER.info("creating Config object")
 cfg = Config(create=True)
@@ -54,7 +54,7 @@ except Exception as err:
 
 @app.route('/')
 def index():
-    return redirect('https://www.pushrocket.net')
+    return redirect('https://www.push.fish')
 
 
 @app.route('/robots.txt')

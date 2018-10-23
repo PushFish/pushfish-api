@@ -10,8 +10,8 @@ stages:
   - release
 
 variables:
-  CONTAINER_TEST_IMAGE: registry.gitlab.com/pushrocket/pushrocket-api:$CI_COMMIT_REF_SLUG
-  CONTAINER_RELEASE_IMAGE: registry.gitlab.com/pushrocket/pushrocket-api:latest
+  CONTAINER_TEST_IMAGE: registry.gitlab.com/pushfish/pushfish-api:$CI_COMMIT_REF_SLUG
+  CONTAINER_RELEASE_IMAGE: registry.gitlab.com/pushfish/pushfish-api:latest
 
 before_script:
   - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
@@ -26,9 +26,9 @@ unitests:
   stage: test
   script:
     - docker pull $CONTAINER_TEST_IMAGE
-    - docker network create pushrocket
-    - docker run -d --name mqtt --network pushrocket toke/mosquitto:latest
-    - docker run -e MQTT_ADDRESS='mqtt' --network pushrocket $CONTAINER_TEST_IMAGE python tests.py
+    - docker network create pushfish
+    - docker run -d --name mqtt --network pushfish toke/mosquitto:latest
+    - docker run -e MQTT_ADDRESS='mqtt' --network pushfish $CONTAINER_TEST_IMAGE python tests.py
     - docker stop mqtt
     - docker rm mqtt
 

@@ -1,4 +1,4 @@
-""" setting and getting the persistent configuration for pushrocket-api server"""
+""" setting and getting the persistent configuration for pushfish-api server"""
 import sys
 import configparser
 import os
@@ -12,21 +12,21 @@ import appdirs
 ConfigOption = namedtuple("ConfigOption", ["default", "type", "required",
                                            "envvar", "comment"])
 
-APPNAME = "pushrocket-api"
+APPNAME = "pushfish-api"
 _LOGGER = logging.getLogger(APPNAME)
 
 T = TypeVar("T", bound="Config")
 
 
 def construct_default_db_uri() -> str:
-    dbpath = os.path.join(appdirs.user_data_dir(APPNAME), "pushrocket-api.db")
+    dbpath = os.path.join(appdirs.user_data_dir(APPNAME), "pushfish-api.db")
     return "sqlite:///" + dbpath
 
 
 db_uri_comment = """#for mysql, use something like:
-#uri = 'mysql+pymysql://pushrocket@localhost/pushrocket_api?charset=utf8mb4'"""
+#uri = 'mysql+pymysql://pushfish@localhost/pushfish_api?charset=utf8mb4'"""
 dispatch_zmq_comment = """#point zeromq_relay_uri at the zeromq pubsub socket for
-#the pushrocket connectors """
+#the pushfish connectors """
 server_debug_comment = """#set debug to 0 for production mode """
 
 DEFAULT_VALUES = {
@@ -45,7 +45,7 @@ def call_if_callable(v, *args, **kwargs):
 
 def get_config_file_path() -> str:
     """
-    gets a configuration file path for pushrocket-api.
+    gets a configuration file path for pushfish-api.
 
     First, the environment variable PUSHROCKET_CONFIG will be checked.
     If that variable contains an invalid path, an exception is raised.
@@ -53,9 +53,9 @@ def get_config_file_path() -> str:
     If the variable is not set, the config file will be loaded from the
     platform specific standard config directory, e.g.
 
-    on linux: ~/.config/pushrocket-api/pushrocket-api.cfg
-    on Windows: C:\\Users\\user\\AppData\\Local\\pushrocket-api\\pushrocket-api.cfg
-    on OSX: /Users/user/Library/Application Support/pushrocket-api/pushrocket-api.cfg
+    on linux: ~/.config/pushfish-api/pushfish-api.cfg
+    on Windows: C:\\Users\\user\\AppData\\Local\\pushfish-api\\pushfish-api.cfg
+    on OSX: /Users/user/Library/Application Support/pushfish-api/pushfish-api.cfg
 
     The file is not created if it does not exist.
 
@@ -72,7 +72,7 @@ def get_config_file_path() -> str:
         return cfile
 
     configdir = appdirs.user_config_dir(appname=APPNAME)
-    return os.path.join(configdir, "pushrocket-api.cfg")
+    return os.path.join(configdir, "pushfish-api.cfg")
 
 
 def write_default_config(path: str = None, overwrite: bool = False):
@@ -119,7 +119,7 @@ def write_default_config(path: str = None, overwrite: bool = False):
 
 
 class Config:
-    """ reader for pushrocket config file """
+    """ reader for pushfish config file """
     GLOBAL_INSTANCE = None
     GLOBAL_BACKTRACE_ENABLE = False
 
@@ -284,7 +284,7 @@ def fatal_error_exit_or_backtrace(err: Exception,
 
     """
     if logger is None:
-        logger = logging.getLogger("pushrocket-api")
+        logger = logging.getLogger("pushfish-api")
 
     logger.critical(msg, *logargs, **logkwargs)
     logger.critical("exiting...")

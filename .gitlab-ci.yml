@@ -22,6 +22,20 @@ build:
     - docker build --pull -t $CONTAINER_TEST_IMAGE .
     - docker push $CONTAINER_TEST_IMAGE
 
+docs:
+  image: python:alpine
+  before_script:
+    - pip install mkdocs mkdocs-rtd-dropdown
+  stage: build
+  script:
+    - mkdocs build
+    - mv site public
+  artifacts:
+    paths:
+    - public
+  only:
+  - master
+
 unitests:
   stage: test
   script:

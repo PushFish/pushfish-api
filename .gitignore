@@ -65,3 +65,7 @@ wsgi.py
 
 start_server
 uwsgi.ini
+
+# static website
+site/
+public/

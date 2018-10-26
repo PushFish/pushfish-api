@@ -1,0 +1,18 @@
+site_name: PushFish-API docs
+site_description: 'Documentation for the PushFish-API server'
+
+theme:
+  name: rtd-dropdown
+
+repo_url: https://gitlab.com/PushFish/PushFish-API
+nav:
+  - Introduction: index.md
+  - API:
+    - Design: api/design.md
+  - Usage:
+    - Installation: usage/installation.md
+    - Configuration: usage/configuration.md
+    - Usage in Production (Nginx): usage/production-nginx.md
+    - Using Docker: usage/using-docker.md
+  - About:
+    - Contributing: about/contributing.md

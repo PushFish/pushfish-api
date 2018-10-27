@@ -22,7 +22,7 @@ build:
     - docker build --pull -t $CONTAINER_TEST_IMAGE .
     - docker push $CONTAINER_TEST_IMAGE
 
-docs:
+pages:
   image: python:alpine
   before_script:
     - pip install mkdocs mkdocs-rtd-dropdown

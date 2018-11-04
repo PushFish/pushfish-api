@@ -4,7 +4,7 @@ This is the core for PushFish. It manages the whole shebang.
 
 
 ## Configuration
-The pushfish API server reads various options from a configuration file. This configuration file can be specified by setting the environment variable `PUSHROCKET_CONFIG`. If this variable is not set, then the file is searched for in a default path.
+The pushfish API server reads various options from a configuration file. This configuration file can be specified by setting the environment variable `PUSHFISH_CONFIG`. If this variable is not set, then the file is searched for in a default path.
 
 ```
      ~/.config/pushfish-api/pushfish-api.cfg # on Linux 

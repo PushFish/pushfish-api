@@ -30,12 +30,12 @@ dispatch_zmq_comment = """#point zeromq_relay_uri at the zeromq pubsub socket fo
 server_debug_comment = """#set debug to 0 for production mode """
 
 DEFAULT_VALUES = {
-    "database": {"uri": ConfigOption(construct_default_db_uri, str, True, "PUSHROCKET_DB", db_uri_comment)},
+    "database": {"uri": ConfigOption(construct_default_db_uri, str, True, "PUSHFISH_DB", db_uri_comment)},
     "dispatch": {"mqtt_broker_address": ConfigOption("", str, False, "MQTT_ADDRESS", None),
-                 "google_api_key": ConfigOption("", str, False, "PUSHROCKET_GOOGLE_API_KEY", None),
-                 "google_gcm_sender_id": ConfigOption(123456789012, bool, True, "PUSHROCKET_GCM_SENDER_ID", None),
-                 "zeromq_relay_uri": ConfigOption("", str, False, "PUSHROCKET_ZMQ_RELAY_URI", dispatch_zmq_comment)},
-    "server": {"debug": ConfigOption(0, bool, False, "PUSHROCKET_DEBUG", server_debug_comment)}}
+                 "google_api_key": ConfigOption("", str, False, "PUSHFISH_GOOGLE_API_KEY", None),
+                 "google_gcm_sender_id": ConfigOption(123456789012, bool, True, "PUSHFISH_GCM_SENDER_ID", None),
+                 "zeromq_relay_uri": ConfigOption("", str, False, "PUSHFISH_ZMQ_RELAY_URI", dispatch_zmq_comment)},
+    "server": {"debug": ConfigOption(0, bool, False, "PUSHFISH_DEBUG", server_debug_comment)}}
 
 
 def call_if_callable(v, *args, **kwargs):
@@ -47,7 +47,7 @@ def get_config_file_path() -> str:
     """
     gets a configuration file path for pushfish-api.
 
-    First, the environment variable PUSHROCKET_CONFIG will be checked.
+    First, the environment variable PUSHFISH_CONFIG will be checked.
     If that variable contains an invalid path, an exception is raised.
 
     If the variable is not set, the config file will be loaded from the
@@ -62,11 +62,11 @@ def get_config_file_path() -> str:
     """
 
     # check environment variable first
-    cfile = os.getenv("PUSHROCKET_CONFIG")
+    cfile = os.getenv("PUSHFISH_CONFIG")
     if not cfile:
-        _LOGGER.info("PUSHROCKET_CONFIG is not set, using default config file location")
+        _LOGGER.info("PUSHFISH_CONFIG is not set, using default config file location")
     elif not os.path.exists(cfile):
-        _LOGGER.warning("PUSHROCKET_CONFIG file path does not exist, it will be created: %s", cfile)
+        _LOGGER.warning("PUSHFISH_CONFIG file path does not exist, it will be created: %s", cfile)
         return cfile
     else:
         return cfile

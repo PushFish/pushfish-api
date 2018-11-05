@@ -8,6 +8,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 ENV FLASK_APP=$HOME_DIR/application.py
-ENV PUSHROCKET_CONFIG=$HOME_DIR/pushfish-api.cfg
-ENV PUSHROCKET_DB=sqlite:////$HOME_DIR/pushfish-api.db
+ENV PUSHFISH_CONFIG=$HOME_DIR/pushfish-api.cfg
+ENV PUSHFISH_DB=sqlite:////$HOME_DIR/pushfish-api.db
 CMD ["flask", "run", "--host", "0.0.0.0"]
